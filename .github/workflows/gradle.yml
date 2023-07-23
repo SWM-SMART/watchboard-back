@@ -60,6 +60,7 @@ jobs:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         instance-ids: ${{ secrets.INSTANCE_ID }}
+        working-directory: /usr/bin
         command: |
           docker stop $(docker ps -a -q)
           docker rm $(docker ps -a -q) 
@@ -112,6 +113,7 @@ jobs:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         instance-ids: ${{ secrets.INSTANCE_ID }}
+        working-directory: /usr/bin
         command: |
           docker stop $(docker ps -a -q)
           docker rm $(docker ps -a -q) 
