@@ -115,7 +115,8 @@ jobs:
         instance-ids: ${{ secrets.INSTANCE_ID }}
         working-directory: /usr/bin
         command: |
-          docker stop $(docker ps -a -q)
-          docker rm $(docker ps -a -q) 
           docker pull noparamin/watchboard:test
-          docker run -d -p 8081:8081 --name watchboard noparamin/watchboard:test
+          docker stop $(docker ps -a -q)
+          docker run -d -p 8081:8081 noparamin/watchboard:test
+          docker rm $(docker ps --filter 'status=exited' -a -q)
+          docker image prune -a -f
