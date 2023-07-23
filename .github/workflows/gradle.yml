@@ -93,7 +93,7 @@ jobs:
       run: ./gradlew build
 
     - name: Build Docker image
-      run: docker build -t noparamin/watchboard .
+      run: docker build -t noparamin/watchboard:test .
 
     - name: Log in Docker Hub
       uses: docker/login-action@v2
