@@ -20,7 +20,7 @@ jobs:
 
     steps:
     - name: checkout repository
-    - uses: actions/checkout@v3
+      uses: actions/checkout@v3
 
     - name: make application-prod.yml
       run: |
@@ -66,7 +66,7 @@ jobs:
 
     steps:
     - name: checkout repository
-    - uses: actions/checkout@v3
+      uses: actions/checkout@v3
 
     - name: make application-dev.yml
       run: |
