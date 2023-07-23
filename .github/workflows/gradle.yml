@@ -118,4 +118,4 @@ jobs:
           docker stop $(docker ps -a -q)
           docker rm $(docker ps -a -q) 
           docker pull noparamin/watchboard:test
-          docker run -d -p 8081:8081 --name watchboard noparamin/watchboard
+          docker run -d -p 8081:8081 --name watchboard noparamin/watchboard:test
