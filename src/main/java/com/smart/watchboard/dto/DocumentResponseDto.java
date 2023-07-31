@@ -10,10 +10,10 @@ import java.util.Map;
 @Setter
 @RequiredArgsConstructor
 public class DocumentResponseDto {
-    private long document_id;
-    private String document_name;
-    private long created_at;
-    private long modified_at;
+    private long documentId;
+    private String documentName;
+    private long createdAt;
+    private long modifiedAt;
     private Map<String, DocumentObjectDto> documentData;
 
     // DocumentData는 map key: value, id : object

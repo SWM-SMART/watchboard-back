@@ -7,15 +7,15 @@ import lombok.Setter;
 @Getter
 @Setter
 public class DocumentCreatedResponseDto {
-    private long document_id;
-    private String document_name;
-    private long created_at;
-    private long modified_at;
+    private long documentId;
+    private String documentName;
+    private long createdAt;
+    private long modifiedAt;
 
     public DocumentCreatedResponseDto(long documentId, String documentName, long createdAt, long modifiedAt) {
-        this.document_id = documentId;
-        this.document_name = documentName;
-        this.created_at = createdAt;
-        this.modified_at = modifiedAt;
+        this.documentId = documentId;
+        this.documentName = documentName;
+        this.createdAt = createdAt;
+        this.modifiedAt = modifiedAt;
     }
 }

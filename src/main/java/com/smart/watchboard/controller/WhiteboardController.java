@@ -34,12 +34,12 @@ public class WhiteboardController {
 
     @GetMapping("/{documentID}")
     @Operation(summary = "화이트보드 데이터 조회", description = "특정 화이트보드의 데이터를 조회한다.")
-    public ResponseEntity<?> getDocument(@RequestParam("documentID") long documentId, @RequestParam("accessToken") String accessToken) {
+    public ResponseEntity<?> getDocument(@PathVariable(value = "documentID") long documentId, @RequestHeader("accessToken") String accessToken) {
         DocumentResponseDto response = new DocumentResponseDto();
-        response.setDocument_id(documentId);
-        response.setDocument_name("document1");
-        response.setCreated_at(1689742186901L);
-        response.setModified_at(1689828586901L);
+        response.setDocumentId(documentId);
+        response.setDocumentName("document1");
+        response.setCreatedAt(1689742186901L);
+        response.setModifiedAt(1689828586901L);
 
         Map<String, DocumentObjectDto> documentDataMap = new HashMap<>();
 
@@ -61,7 +61,7 @@ public class WhiteboardController {
     @CrossOrigin
     @PostMapping()
     @Operation(summary = "화이트보드 생성", description = "화이트보드를 생성한다.")
-    public ResponseEntity<?> createDocument(@RequestBody RequestCreatedDocumentDto requestCreatedDocumentDto) {
+    public ResponseEntity<?> createDocument(@RequestHeader("accessToken") String accessToken, @RequestBody RequestCreatedDocumentDto requestCreatedDocumentDto) {
         String documentName = requestCreatedDocumentDto.getDocumentName();
         DocumentCreatedResponseDto documentCreatedResponseDto = new DocumentCreatedResponseDto(2133L, documentName, 1690528202374L, 1690528216601L);
 
@@ -70,7 +70,7 @@ public class WhiteboardController {
 
     @DeleteMapping("/{documentID}")
     @Operation(summary = "화이트보드 삭제", description = "특정 화이트보드를 삭제한다.")
-    public ResponseEntity<?> deleteDocument(@RequestParam("documentID") long documentId) {
+    public ResponseEntity<?> deleteDocument(@RequestHeader("accessToken") String accessToken, @PathVariable(value="documentID") long documentId) {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 }
