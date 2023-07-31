@@ -10,8 +10,6 @@ import java.sql.Timestamp;
 public class Document {
     private long documentId;
     private String documentName;
-//    private Timestamp createdAt;
-//    private Timestamp modifiedAt;
     private long createdAt;
     private long modifiedAt;
 
