@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,7 +55,7 @@ public class AuthController {
 
     @GetMapping("/users/token")
     @Operation(summary = "로그인 후 토큰 전달", description = "로그인 후 request로 받은 리프레시 토큰 검증 후 액세스 토큰과 리프레시 토큰 전달")
-    public ResponseEntity<HttpHeaders> getTokens(@CookieValue("refreshToken") String refreshToken) {
+    public ResponseEntity<HttpHeaders> getTokens(@CookieValue("refreshToken") String refreshToken) throws UnsupportedEncodingException {
         HttpHeaders headers = jwtService.createHeaderWithTokens(refreshToken);
 
         return new ResponseEntity<>(headers, HttpStatus.OK);

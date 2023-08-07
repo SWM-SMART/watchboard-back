@@ -11,8 +11,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.Date;
 import java.util.Optional;
 
@@ -155,13 +159,34 @@ public class JwtService {
         }
     }
 
-    public HttpHeaders createHeaderWithTokens(String refreshToken) {
-        HttpHeaders headers = new HttpHeaders();
+    public String extractDecodedRefreshToken(String refreshToken) {
+        return refreshToken.substring(7);
+    }
 
-        if (isTokenValid(refreshToken)) {
-            headers.add(accessHeader, createAccessToken(extractUserId(refreshToken).get()));
-            headers.add(refreshHeader, createRefreshToken(extractUserId(refreshToken).get()));
-        } else{
+    public ResponseCookie setCookieRefreshToken(String refreshToken) throws UnsupportedEncodingException {
+        refreshToken = "Bearer " + refreshToken;
+        String encodedBearerAndToken = URLEncoder.encode(refreshToken, "UTF-8");
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", encodedBearerAndToken)
+                .maxAge(60)
+                .path("/users/token")
+                .secure(false)
+                .sameSite("Strict")
+                .httpOnly(true)
+                .build();
+
+        return cookie;
+    }
+
+    public HttpHeaders createHeaderWithTokens(String refreshToken) throws UnsupportedEncodingException {
+        HttpHeaders headers = new HttpHeaders();
+        String decodedRefreshToken = extractDecodedRefreshToken(URLDecoder.decode(refreshToken, "UTF-8"));
+
+        if (isTokenValid(decodedRefreshToken)) {
+            headers.add(accessHeader, createAccessToken(extractUserId(decodedRefreshToken).get()));
+            String newRefreshToken = createRefreshToken(extractUserId(decodedRefreshToken).get());
+            ResponseCookie cookie = setCookieRefreshToken(newRefreshToken);
+            headers.add("Set-Cookie", cookie.toString());
+        } else {
             log.info("유효하지 않은 토큰");
         }
 
