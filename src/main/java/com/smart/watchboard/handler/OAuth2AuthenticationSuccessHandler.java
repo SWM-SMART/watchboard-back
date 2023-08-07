@@ -31,19 +31,13 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         try {
             CustomOAuth2User oAuth2User = (CustomOAuth2User) authentication.getPrincipal();
 
-            if(oAuth2User.getRole() == Role.USER) {
+            if (oAuth2User.getRole() == Role.USER) {
                 String refreshToken = jwtService.createRefreshToken(oAuth2User.getUserId());
-                ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
-                        .maxAge(60)
-                        .path("/")
-                        .secure(false)
-                        .sameSite("None")
-                        .httpOnly(true)
-                        .build();
+                ResponseCookie cookie = jwtService.setCookieRefreshToken(refreshToken);
                 response.setHeader("Set-Cookie", cookie.toString());
                 response.sendRedirect("oauth2/sign-up"); // 추후 수정
                 User findUser = userRepository.findByEmail(oAuth2User.getEmail())
-                                .orElseThrow(() -> new IllegalArgumentException("이메일에 해당하는 유저가 없습니다."));
+                        .orElseThrow(() -> new IllegalArgumentException("이메일에 해당하는 유저가 없습니다."));
                 findUser.authorizeUser();
             } else {
                 loginSuccess(response, oAuth2User);
