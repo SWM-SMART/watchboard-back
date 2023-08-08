@@ -20,7 +20,7 @@ public class WhiteboardController {
 
     @GetMapping()
     @Operation(summary = "화이트보드 목록 조회", description = "사용자가 속해 있는 모든 화이트보드 목록을 조회한다.")
-    public ResponseEntity<?> getAllDocuments(@RequestHeader("accessToken") String accessToken) {
+    public ResponseEntity<?> getAllDocuments() {
         List<Document> documents = new ArrayList<>();
 
         documents.add(new Document(1L, "문서1", 1690469974169L, 1690470003987L));
@@ -34,7 +34,7 @@ public class WhiteboardController {
 
     @GetMapping("/{documentID}")
     @Operation(summary = "화이트보드 데이터 조회", description = "특정 화이트보드의 데이터를 조회한다.")
-    public ResponseEntity<?> getDocument(@PathVariable(value = "documentID") long documentId, @RequestHeader("accessToken") String accessToken) {
+    public ResponseEntity<?> getDocument(@PathVariable(value = "documentID") long documentId) {
         DocumentResponseDto response = new DocumentResponseDto();
         response.setDocumentId(documentId);
         response.setDocumentName("document1");
@@ -61,7 +61,7 @@ public class WhiteboardController {
     @CrossOrigin
     @PostMapping()
     @Operation(summary = "화이트보드 생성", description = "화이트보드를 생성한다.")
-    public ResponseEntity<?> createDocument(@RequestHeader("accessToken") String accessToken, @RequestBody RequestCreatedDocumentDto requestCreatedDocumentDto) {
+    public ResponseEntity<?> createDocument(@RequestBody RequestCreatedDocumentDto requestCreatedDocumentDto) {
         String documentName = requestCreatedDocumentDto.getDocumentName();
         DocumentCreatedResponseDto documentCreatedResponseDto = new DocumentCreatedResponseDto(2133L, documentName, 1690528202374L, 1690528216601L);
 
@@ -70,7 +70,7 @@ public class WhiteboardController {
 
     @DeleteMapping("/{documentID}")
     @Operation(summary = "화이트보드 삭제", description = "특정 화이트보드를 삭제한다.")
-    public ResponseEntity<?> deleteDocument(@RequestHeader("accessToken") String accessToken, @PathVariable(value="documentID") long documentId) {
+    public ResponseEntity<?> deleteDocument(@PathVariable(value="documentID") long documentId) {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 }
