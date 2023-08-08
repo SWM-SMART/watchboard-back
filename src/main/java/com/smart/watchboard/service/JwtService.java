@@ -169,8 +169,8 @@ public class JwtService {
         ResponseCookie cookie = ResponseCookie.from("refreshToken", encodedBearerAndToken)
                 .maxAge(60)
                 .path("/users/token")
-                .secure(false)
-                .sameSite("Strict")
+                .secure(true)
+                .sameSite("None")
                 .httpOnly(true)
                 .build();
 
@@ -180,7 +180,7 @@ public class JwtService {
     public HttpHeaders createHeaderWithTokens(String refreshToken) throws UnsupportedEncodingException {
         HttpHeaders headers = new HttpHeaders();
         String decodedRefreshToken = extractDecodedRefreshToken(URLDecoder.decode(refreshToken, "UTF-8"));
-
+        log.info(decodedRefreshToken);
         if (isTokenValid(decodedRefreshToken)) {
             headers.add(accessHeader, createAccessToken(extractUserId(decodedRefreshToken).get()));
             String newRefreshToken = createRefreshToken(extractUserId(decodedRefreshToken).get());
@@ -188,6 +188,7 @@ public class JwtService {
             headers.add("Set-Cookie", cookie.toString());
         } else {
             log.info("유효하지 않은 토큰");
+            log.info(decodedRefreshToken);
         }
 
         return headers;
