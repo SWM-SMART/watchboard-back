@@ -5,6 +5,9 @@ import com.smart.watchboard.common.enums.SocialType;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
@@ -27,6 +30,9 @@ public class User {
     private SocialType socialType;
 
     private String socialId;
+
+    @OneToMany(mappedBy = "user")
+    private List<UserDocument> userDocuments = new ArrayList<>();
 
     public void authorizeUser() {
         this.role = Role.USER;
