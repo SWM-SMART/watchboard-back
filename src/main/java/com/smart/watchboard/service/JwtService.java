@@ -3,7 +3,6 @@ package com.smart.watchboard.service;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.smart.watchboard.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
@@ -56,7 +55,7 @@ public class JwtService {
                 .withSubject(ACCESS_TOKEN_SUBJECT)
                 .withExpiresAt(new Date(now.getTime() + accessTokenExpirationPeriod)) // 토큰 만료 시간 설정
                 .withClaim(ISSUER_CLAIM, ISSUER_CLAIM_VALUE)
-                .withClaim("user_id", userId)
+                .withClaim("userId", userId)
                 .sign(Algorithm.HMAC512(secretKey));
     }
 
@@ -115,6 +114,26 @@ public class JwtService {
         return Optional.ofNullable(request.getHeader(accessHeader))
                 .filter(refreshToken -> refreshToken.startsWith(BEARER))
                 .map(refreshToken -> refreshToken.replace(BEARER, ""));
+    }
+
+    public String extractAccessToken(String accessToken) {
+        try {
+            isAccessTokenFormatValid(accessToken);
+        } catch (IllegalArgumentException e) {
+            log.info("Error: " + e);
+        }
+
+        return accessToken.substring(7);
+    }
+
+    public void isAccessTokenFormatValid(String accessToken) {
+        if (accessToken == null) {
+            throw new IllegalArgumentException("Input cannot be null");
+        }
+
+        if (!accessToken.startsWith("Bearer ")) {
+            throw new IllegalArgumentException("Invalid input format");
+        }
     }
 
 
@@ -182,7 +201,7 @@ public class JwtService {
         String decodedRefreshToken = extractDecodedRefreshToken(URLDecoder.decode(refreshToken, "UTF-8"));
         log.info(decodedRefreshToken);
         if (isTokenValid(decodedRefreshToken)) {
-            headers.add(accessHeader, createAccessToken(extractUserId(decodedRefreshToken).get()));
+            headers.add(accessHeader, "Bearer " + createAccessToken(extractUserId(decodedRefreshToken).get()));
             String newRefreshToken = createRefreshToken(extractUserId(decodedRefreshToken).get());
             ResponseCookie cookie = setCookieRefreshToken(newRefreshToken);
             headers.add("Set-Cookie", cookie.toString());
