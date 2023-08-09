@@ -1,14 +1,14 @@
 package com.smart.watchboard.controller;
 
-import com.smart.watchboard.domain.Document;
 import com.smart.watchboard.dto.*;
+import com.smart.watchboard.service.WhiteboardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,18 +16,15 @@ import java.util.Map;
 @RestController
 @RequestMapping(value = "/documents")
 @Tag(name = "화이트보드 문서 API", description = "화이트보드 관련 API(mock)")
+@RequiredArgsConstructor
 public class WhiteboardController {
+
+    private final WhiteboardService whiteboardService;
 
     @GetMapping()
     @Operation(summary = "화이트보드 목록 조회", description = "사용자가 속해 있는 모든 화이트보드 목록을 조회한다.")
-    public ResponseEntity<?> getAllDocuments() {
-        List<Document> documents = new ArrayList<>();
-
-        documents.add(new Document(1L, "문서1", 1690469974169L, 1690470003987L));
-        documents.add(new Document(2L, "문서2", 1690470060729L, 1690470071589L));
-        documents.add(new Document(3L, "문서3", 1690470080683L, 1690470091336L));
-        documents.add(new Document(4L, "문서4", 1690470100340L, 1690470108837L));
-        documents.add(new Document(5L, "문서5", 1690470121154L, 1690470129636L));
+    public ResponseEntity<?> getAllDocuments(@RequestHeader("Authorization") String accessToken) {
+        List<DocumentDto> documents = whiteboardService.findDocumentsByUserId(accessToken);
 
         return new ResponseEntity<>(documents, HttpStatus.OK);
     }
@@ -61,16 +58,17 @@ public class WhiteboardController {
     @CrossOrigin
     @PostMapping()
     @Operation(summary = "화이트보드 생성", description = "화이트보드를 생성한다.")
-    public ResponseEntity<?> createDocument(@RequestBody RequestCreatedDocumentDto requestCreatedDocumentDto) {
-        String documentName = requestCreatedDocumentDto.getDocumentName();
-        DocumentCreatedResponseDto documentCreatedResponseDto = new DocumentCreatedResponseDto(2133L, documentName, 1690528202374L, 1690528216601L);
+    public ResponseEntity<?> createDocument(@RequestBody RequestCreatedDocumentDto requestCreatedDocumentDto, @RequestHeader("Authorization") String accessToken) {
+        DocumentCreatedResponseDto documentCreatedResponseDto = whiteboardService.createDocument(requestCreatedDocumentDto, accessToken);
 
         return new ResponseEntity<>(documentCreatedResponseDto, HttpStatus.CREATED);
     }
 
     @DeleteMapping("/{documentID}")
     @Operation(summary = "화이트보드 삭제", description = "특정 화이트보드를 삭제한다.")
-    public ResponseEntity<?> deleteDocument(@PathVariable(value="documentID") long documentId) {
+    public ResponseEntity<?> deleteDocument(@PathVariable(value = "documentID") long documentId, @RequestHeader("Authorization") String accessToken) {
+        whiteboardService.deleteDocument(documentId, accessToken);
+
         return new ResponseEntity<>(HttpStatus.OK);
     }
 }
