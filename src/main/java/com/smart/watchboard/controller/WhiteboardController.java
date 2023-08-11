@@ -1,5 +1,6 @@
 package com.smart.watchboard.controller;
 
+import com.smart.watchboard.domain.WhiteboardData;
 import com.smart.watchboard.dto.*;
 import com.smart.watchboard.service.WhiteboardService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,26 +31,8 @@ public class WhiteboardController {
 
     @GetMapping("/{documentID}")
     @Operation(summary = "화이트보드 데이터 조회", description = "특정 화이트보드의 데이터를 조회한다.")
-    public ResponseEntity<?> getDocument(@PathVariable(value = "documentID") long documentId) {
-        DocumentResponseDto response = new DocumentResponseDto();
-        response.setDocumentId(documentId);
-        response.setDocumentName("document1");
-        response.setCreatedAt(1689742186901L);
-        response.setModifiedAt(1689828586901L);
-
-        Map<String, DocumentObjectDto> documentDataMap = new HashMap<>();
-
-        documentDataMap.put("0", new DocumentRectDto("0", "RECT", 10, 10, 0.0001, "ROOT", 100, 100, "rgb(121, 75, 150)"));
-        documentDataMap.put("1", new DocumentRectDto("1", "RECT", -10, -10, 0.0002, "ROOT", 100, 100, "rgb(20, 200, 100)"));
-        documentDataMap.put("2", new DocumentTextDto("2", "TEXT", 0, 0, 0.0003, "ROOT", 100, 5, "normal", "lorem ipsum", "rgb(121, 75, 150)"));
-        documentDataMap.put("3", new DocumentTextDto("3", "TEXT", 0, 0, 0.0003, "1", 100, 5, "normal", "lorem ipsum", "rgb(121, 75, 150)"));
-        documentDataMap.put("4", new DocumentTextDto("4", "TEXT", 0, 0, 0.0003, "2", 100, 5, "normal", "lorem ipsum", "rgb(121, 75, 150)"));
-        documentDataMap.put("5", new DocumentTextDto("5", "TEXT", 0, 0, 0.0003, "6", 100, 5, "normal", "lorem ipsum", "rgb(121, 75, 150)"));
-        documentDataMap.put("6", new DocumentTextDto("6", "TEXT", 0, 0, 0.0003, "2", 100, 5, "normal", "lorem ipsum", "rgb(121, 75, 150)"));
-        documentDataMap.put("7", new DocumentTextDto("7", "TEXT", 0, 0, 0.0003, "1", 100, 5, "normal", "lorem ipsum", "rgb(121, 75, 150)"));
-        documentDataMap.put("8", new DocumentTextDto("8", "TEXT", 0, 0, 0.0003, "3", 100, 5, "normal", "lorem ipsum", "rgb(121, 75, 150)"));
-
-        response.setDocumentData(documentDataMap);
+    public ResponseEntity<DocumentResponseDto> getDocument(@PathVariable(value = "documentID") long documentId, @RequestHeader("Authorization") String accessToken) {
+        DocumentResponseDto response = whiteboardService.findDocument(documentId, accessToken);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -68,6 +50,14 @@ public class WhiteboardController {
     @Operation(summary = "화이트보드 삭제", description = "특정 화이트보드를 삭제한다.")
     public ResponseEntity<?> deleteDocument(@PathVariable(value = "documentID") long documentId, @RequestHeader("Authorization") String accessToken) {
         whiteboardService.deleteDocument(documentId, accessToken);
+
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PostMapping("/{documentID}/data")
+    @Operation(summary = "화이트보드 문서 데이터 생성 및 수정", description = "화이트보드 문서 내의 데이터 생성 및 수정한다.")
+    public ResponseEntity<?> createDocumentData(@PathVariable(value = "documentID") long documentId, @RequestHeader("Authorization") String accessToken, @RequestBody Map<String, WhiteboardData> documentData) {
+        whiteboardService.createWhiteboardData(documentData, documentId, accessToken);
 
         return new ResponseEntity<>(HttpStatus.OK);
     }
