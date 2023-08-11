@@ -1,22 +1,21 @@
 package com.smart.watchboard.service;
 
-import com.smart.watchboard.domain.Document;
-import com.smart.watchboard.domain.User;
-import com.smart.watchboard.domain.UserDocument;
-import com.smart.watchboard.dto.DocumentCreatedResponseDto;
-import com.smart.watchboard.dto.DocumentDto;
-import com.smart.watchboard.dto.RequestCreatedDocumentDto;
+import com.smart.watchboard.domain.*;
+import com.smart.watchboard.dto.*;
 import com.smart.watchboard.repository.DocumentRepository;
 import com.smart.watchboard.repository.UserDocumentRepository;
 import com.smart.watchboard.repository.UserRepository;
+import com.smart.watchboard.repository.WhiteboardRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +25,8 @@ public class WhiteboardService {
     private final DocumentRepository documentRepository;
     private final UserDocumentRepository userDocumentRepository;
     private final UserRepository userRepository;
+    private final WhiteboardRepository whiteboardRepository;
+    private final MongoTemplate mongoTemplate;
 
     public List<DocumentDto> findDocumentsByUserId(String accessToken) {
         String extractedAccessToken = jwtService.extractAccessToken(accessToken);
@@ -67,6 +68,91 @@ public class WhiteboardService {
             documentRepository.save(updatedDocument);
         }
 
+    }
+
+    public void createWhiteboardData(Map<String, WhiteboardData> documentData, long documentId, String accessToken) {
+        // accessToken 유효성 검사, 아이디 추출, 해당 whiteboard 소속되어 있는지 확인, 중복 확인 없으면 생성, 있으면 업데이트
+        String extractedAccessToken = jwtService.extractAccessToken(accessToken);
+        Optional<Long> userId = jwtService.extractUserId(extractedAccessToken);
+        User user = userRepository.getById(userId);
+        Document document = documentRepository.findByDocumentId(documentId);
+
+        if (!userDocumentRepository.existsByUserAndDocument(user, document)) {
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST);
+        }
+
+        Optional<Whiteboard> exsistingWhiteboardData = whiteboardRepository.findByDocumentId(document.getDocumentId());
+        exsistingWhiteboardData.ifPresentOrElse(data -> {
+            data.setDocumentData(documentData);
+            mongoTemplate.save(data);
+            }, () -> {
+            Whiteboard whiteboard = Whiteboard.builder()
+                    .documentId(documentId)
+                    .documentName(document.getDocumentName())
+                    .createdAt(document.getCreatedAt().toEpochMilli())
+                    .modifiedAt(document.getModifiedAt().toEpochMilli())
+                    .documentData(documentData)
+                    .build();
+            whiteboardRepository.save(whiteboard);
+        });
+    }
+
+    public DocumentResponseDto findDocument(long documentId, String accessToken) {
+        // accessToken 유효성 검사, 아이디 추출, 해당 whiteboard 소속되어 잇는지 확인
+        String extractedAccessToken = jwtService.extractAccessToken(accessToken);
+        Optional<Long> userId = jwtService.extractUserId(extractedAccessToken);
+
+        Optional<Whiteboard> whiteboard = whiteboardRepository.findByDocumentId(documentId);
+        User user = userRepository.getById(userId);
+        Document document = documentRepository.findByDocumentId(whiteboard.get().getDocumentId());
+        if (!userDocumentRepository.existsByUserAndDocument(user, document)) {
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST);
+        }
+
+        DocumentResponseDto documentResponseDto = new DocumentResponseDto();
+        documentResponseDto.setDocumentId(documentId);
+        documentResponseDto.setDocumentName(whiteboard.get().getDocumentName());
+        documentResponseDto.setCreatedAt(whiteboard.get().getCreatedAt());
+        documentResponseDto.setModifiedAt(whiteboard.get().getModifiedAt());
+
+        Map<String, DocumentObjectDto> documentDataMap = new HashMap<>();
+        for (Map.Entry<String, WhiteboardData> entry : whiteboard.get().getDocumentData().entrySet()) {
+            String key = entry.getKey();
+            WhiteboardData value = entry.getValue();
+
+            if (value.getType().equals("TEXT")) {
+                DocumentTextDto documentTextDto = DocumentTextDto.builder()
+                        .objId(value.getObjId())
+                        .type(value.getType())
+                        .x(value.getX())
+                        .y(value.getY())
+                        .depth(value.getDepth())
+                        .parentId(value.getParentId())
+                        .w(value.getW())
+                        .fontSize(value.getFontSize())
+                        .overflow(value.getOverflow())
+                        .text(value.getText())
+                        .color(value.getColor())
+                        .build();
+                documentDataMap.put(key, documentTextDto);
+            } else if (value.getType().equals("RECT")) {
+                DocumentRectDto documentRectDto = DocumentRectDto.builder()
+                        .objId(value.getObjId())
+                        .type(value.getType())
+                        .x(value.getX())
+                        .y(value.getY())
+                        .depth(value.getDepth())
+                        .parentId(value.getParentId())
+                        .w(value.getW())
+                        .h(value.getH())
+                        .color(value.getColor())
+                        .build();
+                documentDataMap.put(key, documentRectDto);
+            }
+        }
+        documentResponseDto.setDocumentData(documentDataMap);
+
+        return documentResponseDto;
     }
 
     private DocumentCreatedResponseDto convertToDocumentCreatedResponseDto(Document document) {
