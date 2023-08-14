@@ -186,7 +186,7 @@ public class JwtService {
         refreshToken = "Bearer " + refreshToken;
         String encodedBearerAndToken = URLEncoder.encode(refreshToken, "UTF-8");
         ResponseCookie cookie = ResponseCookie.from("refreshToken", encodedBearerAndToken)
-                .maxAge(60)
+                .maxAge(1209600000)
                 .path("/users/token")
                 .secure(true)
                 .sameSite("None")
