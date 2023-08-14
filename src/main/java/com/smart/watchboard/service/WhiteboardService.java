@@ -50,6 +50,18 @@ public class WhiteboardService {
         Document savedDocument = documentRepository.save(document);
         createUserDocument(user, document);
 
+        Map<String, WhiteboardData> documentData = new HashMap<>();
+
+        Whiteboard whiteboard = Whiteboard.builder()
+                .documentId(document.getDocumentId())
+                .documentName(document.getDocumentName())
+                .createdAt(document.getCreatedAt().toEpochMilli())
+                .modifiedAt(document.getModifiedAt().toEpochMilli())
+                .documentData(documentData)
+                .build();
+
+        whiteboardRepository.save(whiteboard);
+
         return convertToDocumentCreatedResponseDto(savedDocument);
     }
 
@@ -101,9 +113,11 @@ public class WhiteboardService {
         // accessToken 유효성 검사, 아이디 추출, 해당 whiteboard 소속되어 잇는지 확인
         String extractedAccessToken = jwtService.extractAccessToken(accessToken);
         Optional<Long> userId = jwtService.extractUserId(extractedAccessToken);
-
+        System.out.println(userId);
         Optional<Whiteboard> whiteboard = whiteboardRepository.findByDocumentId(documentId);
         User user = userRepository.getById(userId);
+        System.out.println(whiteboard.get().getDocumentId());
+        System.out.println(user.getNickname());
         Document document = documentRepository.findByDocumentId(whiteboard.get().getDocumentId());
         if (!userDocumentRepository.existsByUserAndDocument(user, document)) {
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST);
