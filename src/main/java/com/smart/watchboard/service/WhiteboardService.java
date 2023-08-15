@@ -8,8 +8,6 @@ import com.smart.watchboard.repository.UserRepository;
 import com.smart.watchboard.repository.WhiteboardRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -26,7 +24,6 @@ public class WhiteboardService {
     private final UserDocumentRepository userDocumentRepository;
     private final UserRepository userRepository;
     private final WhiteboardRepository whiteboardRepository;
-    private final MongoTemplate mongoTemplate;
 
     public List<DocumentDto> findDocumentsByUserId(String accessToken) {
         String extractedAccessToken = jwtService.extractAccessToken(accessToken);
@@ -83,7 +80,6 @@ public class WhiteboardService {
     }
 
     public void createWhiteboardData(Map<String, WhiteboardData> documentData, long documentId, String accessToken) {
-        // accessToken 유효성 검사, 아이디 추출, 해당 whiteboard 소속되어 있는지 확인, 중복 확인 없으면 생성, 있으면 업데이트
         String extractedAccessToken = jwtService.extractAccessToken(accessToken);
         Optional<Long> userId = jwtService.extractUserId(extractedAccessToken);
         User user = userRepository.getById(userId);
@@ -96,7 +92,7 @@ public class WhiteboardService {
         Optional<Whiteboard> exsistingWhiteboardData = whiteboardRepository.findByDocumentId(document.getDocumentId());
         exsistingWhiteboardData.ifPresentOrElse(data -> {
             data.setDocumentData(documentData);
-            mongoTemplate.save(data);
+            whiteboardRepository.save(data);
             }, () -> {
             Whiteboard whiteboard = Whiteboard.builder()
                     .documentId(documentId)
@@ -110,7 +106,6 @@ public class WhiteboardService {
     }
 
     public DocumentResponseDto findDocument(long documentId, String accessToken) {
-        // accessToken 유효성 검사, 아이디 추출, 해당 whiteboard 소속되어 잇는지 확인
         String extractedAccessToken = jwtService.extractAccessToken(accessToken);
         Optional<Long> userId = jwtService.extractUserId(extractedAccessToken);
         System.out.println(userId);
