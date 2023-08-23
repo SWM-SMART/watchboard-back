@@ -108,11 +108,8 @@ public class WhiteboardService {
     public DocumentResponseDto findDocument(long documentId, String accessToken) {
         String extractedAccessToken = jwtService.extractAccessToken(accessToken);
         Optional<Long> userId = jwtService.extractUserId(extractedAccessToken);
-        System.out.println(userId);
         Optional<Whiteboard> whiteboard = whiteboardRepository.findByDocumentId(documentId);
         User user = userRepository.getById(userId);
-        System.out.println(whiteboard.get().getDocumentId());
-        System.out.println(user.getNickname());
         Document document = documentRepository.findByDocumentId(whiteboard.get().getDocumentId());
         if (!userDocumentRepository.existsByUserAndDocument(user, document)) {
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST);
@@ -157,6 +154,20 @@ public class WhiteboardService {
                         .color(value.getColor())
                         .build();
                 documentDataMap.put(key, documentRectDto);
+            } else if (value.getType().equals("LINE")) {
+                DocumentLineDto documentLineDto = DocumentLineDto.builder()
+                        .objId(value.getObjId())
+                        .type(value.getType())
+                        .x(value.getX())
+                        .y(value.getY())
+                        .depth(value.getDepth())
+                        .parentId(value.getParentId())
+                        .w(value.getW())
+                        .h(value.getH())
+                        .fontSize(value.getFontSize())
+                        .color(value.getColor())
+                        .build();
+                documentDataMap.put(key, documentLineDto);
             }
         }
         documentResponseDto.setDocumentData(documentDataMap);
