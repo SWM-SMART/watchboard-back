@@ -48,15 +48,7 @@ public class WhiteboardService {
         createUserDocument(user, document);
 
         Map<String, WhiteboardData> documentData = new HashMap<>();
-
-        Whiteboard whiteboard = Whiteboard.builder()
-                .documentId(document.getDocumentId())
-                .documentName(document.getDocumentName())
-                .createdAt(document.getCreatedAt().toEpochMilli())
-                .modifiedAt(document.getModifiedAt().toEpochMilli())
-                .documentData(documentData)
-                .build();
-
+        Whiteboard whiteboard = setWhiteboard(document, documentData);
         whiteboardRepository.save(whiteboard);
 
         return convertToDocumentCreatedResponseDto(savedDocument);
@@ -94,15 +86,21 @@ public class WhiteboardService {
             data.setDocumentData(documentData);
             whiteboardRepository.save(data);
             }, () -> {
-            Whiteboard whiteboard = Whiteboard.builder()
-                    .documentId(documentId)
-                    .documentName(document.getDocumentName())
-                    .createdAt(document.getCreatedAt().toEpochMilli())
-                    .modifiedAt(document.getModifiedAt().toEpochMilli())
-                    .documentData(documentData)
-                    .build();
+            Whiteboard whiteboard = setWhiteboard(document, documentData);
             whiteboardRepository.save(whiteboard);
         });
+    }
+
+    public Whiteboard setWhiteboard(Document document, Map<String, WhiteboardData> documentData) {
+        Whiteboard whiteboard = Whiteboard.builder()
+                .documentId(document.getDocumentId())
+                .documentName(document.getDocumentName())
+                .createdAt(document.getCreatedAt().toEpochMilli())
+                .modifiedAt(document.getModifiedAt().toEpochMilli())
+                .documentData(documentData)
+                .build();
+
+        return whiteboard;
     }
 
     public DocumentResponseDto findDocument(long documentId, String accessToken) {
