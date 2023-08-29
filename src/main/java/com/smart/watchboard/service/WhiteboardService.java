@@ -103,6 +103,22 @@ public class WhiteboardService {
         return whiteboard;
     }
 
+    public Map<String, DocumentObjectDto> setDocumentDataMap(Optional<Whiteboard> whiteboard) {
+        Map<String, DocumentObjectDto> documentDataMap = new HashMap<>();
+
+        for (Map.Entry<String, WhiteboardData> entry : whiteboard.get().getDocumentData().entrySet()) {
+            String key = entry.getKey();
+            WhiteboardData value = entry.getValue();
+
+            DocumentObjectDto documentObjectDto = DocumentObjectDtoFactory.createDtoFromWhiteboardData(value);
+            if (documentObjectDto != null) {
+                documentDataMap.put(key, documentObjectDto);
+            }
+        }
+
+        return documentDataMap;
+    }
+
     public DocumentResponseDto findDocument(long documentId, String accessToken) {
         String extractedAccessToken = jwtService.extractAccessToken(accessToken);
         Optional<Long> userId = jwtService.extractUserId(extractedAccessToken);
@@ -119,55 +135,7 @@ public class WhiteboardService {
         documentResponseDto.setCreatedAt(whiteboard.get().getCreatedAt());
         documentResponseDto.setModifiedAt(whiteboard.get().getModifiedAt());
 
-        Map<String, DocumentObjectDto> documentDataMap = new HashMap<>();
-        for (Map.Entry<String, WhiteboardData> entry : whiteboard.get().getDocumentData().entrySet()) {
-            String key = entry.getKey();
-            WhiteboardData value = entry.getValue();
-
-            if (value.getType().equals("TEXT")) {
-                DocumentTextDto documentTextDto = DocumentTextDto.builder()
-                        .objId(value.getObjId())
-                        .type(value.getType())
-                        .x(value.getX())
-                        .y(value.getY())
-                        .depth(value.getDepth())
-                        .parentId(value.getParentId())
-                        .w(value.getW())
-                        .fontSize(value.getFontSize())
-                        .overflow(value.getOverflow())
-                        .text(value.getText())
-                        .color(value.getColor())
-                        .build();
-                documentDataMap.put(key, documentTextDto);
-            } else if (value.getType().equals("RECT")) {
-                DocumentRectDto documentRectDto = DocumentRectDto.builder()
-                        .objId(value.getObjId())
-                        .type(value.getType())
-                        .x(value.getX())
-                        .y(value.getY())
-                        .depth(value.getDepth())
-                        .parentId(value.getParentId())
-                        .w(value.getW())
-                        .h(value.getH())
-                        .color(value.getColor())
-                        .build();
-                documentDataMap.put(key, documentRectDto);
-            } else if (value.getType().equals("LINE")) {
-                DocumentLineDto documentLineDto = DocumentLineDto.builder()
-                        .objId(value.getObjId())
-                        .type(value.getType())
-                        .x(value.getX())
-                        .y(value.getY())
-                        .depth(value.getDepth())
-                        .parentId(value.getParentId())
-                        .w(value.getW())
-                        .h(value.getH())
-                        .fontSize(value.getFontSize())
-                        .color(value.getColor())
-                        .build();
-                documentDataMap.put(key, documentLineDto);
-            }
-        }
+        Map<String, DocumentObjectDto> documentDataMap = setDocumentDataMap(whiteboard);
         documentResponseDto.setDocumentData(documentDataMap);
 
         return documentResponseDto;
