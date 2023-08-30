@@ -1,23 +1,41 @@
 package com.smart.watchboard.domain;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
+import com.smart.watchboard.dto.DocumentDto;
+import jakarta.persistence.*;
+import lombok.*;
 
-import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Entity
+@Table(name = "DOCUMENT")
 public class Document {
-    private long documentId;
-    private String documentName;
-    private long createdAt;
-    private long modifiedAt;
 
-    public Document(long documentId, String documentName, long createdAt, long modifiedAt) {
-        this.documentId = documentId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "document_id")
+    private long documentId;
+
+    private String documentName;
+
+    private Instant createdAt;
+
+    private Instant modifiedAt;
+
+    private boolean isDeleted;
+
+    @OneToMany(mappedBy = "document")
+    private List<UserDocument> userDocuments = new ArrayList<>();
+
+    public Document(String documentName, Instant createdAt, Instant modifiedAt, boolean isDeleted) {
         this.documentName = documentName;
         this.createdAt = createdAt;
         this.modifiedAt = modifiedAt;
+        this.isDeleted = isDeleted;
     }
 
     @Override

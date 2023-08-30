@@ -3,7 +3,6 @@ package com.smart.watchboard.service;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.smart.watchboard.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
@@ -56,7 +55,7 @@ public class JwtService {
                 .withSubject(ACCESS_TOKEN_SUBJECT)
                 .withExpiresAt(new Date(now.getTime() + accessTokenExpirationPeriod)) // 토큰 만료 시간 설정
                 .withClaim(ISSUER_CLAIM, ISSUER_CLAIM_VALUE)
-                .withClaim("user_id", userId)
+                .withClaim("userId", userId)
                 .sign(Algorithm.HMAC512(secretKey));
     }
 
@@ -117,6 +116,26 @@ public class JwtService {
                 .map(refreshToken -> refreshToken.replace(BEARER, ""));
     }
 
+    public String extractAccessToken(String accessToken) {
+        try {
+            isAccessTokenFormatValid(accessToken);
+        } catch (IllegalArgumentException e) {
+            log.info("Error: " + e);
+        }
+
+        return accessToken.substring(7);
+    }
+
+    public void isAccessTokenFormatValid(String accessToken) {
+        if (accessToken == null) {
+            throw new IllegalArgumentException("Input cannot be null");
+        }
+
+        if (!accessToken.startsWith("Bearer ")) {
+            throw new IllegalArgumentException("Invalid input format");
+        }
+    }
+
 
     /**
      * userId 추출
@@ -159,16 +178,28 @@ public class JwtService {
         }
     }
 
-    public String extractDecodedRefreshToken(String refreshToken) {
-        return refreshToken.substring(7);
+    public String extractDecodedToken(String token) {
+        return token.substring(7);
     }
 
     public ResponseCookie setCookieRefreshToken(String refreshToken) throws UnsupportedEncodingException {
         refreshToken = "Bearer " + refreshToken;
         String encodedBearerAndToken = URLEncoder.encode(refreshToken, "UTF-8");
         ResponseCookie cookie = ResponseCookie.from("refreshToken", encodedBearerAndToken)
-                .maxAge(60)
+                .maxAge(1209600000)
                 .path("/users/token")
+                .secure(true)
+                .sameSite("None")
+                .httpOnly(true)
+                .build();
+
+        return cookie;
+    }
+
+    public ResponseCookie deleteCookieRefreshToken() {
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
+                .maxAge(0)
+                .path("/")
                 .secure(true)
                 .sameSite("None")
                 .httpOnly(true)
@@ -179,16 +210,29 @@ public class JwtService {
 
     public HttpHeaders createHeaderWithTokens(String refreshToken) throws UnsupportedEncodingException {
         HttpHeaders headers = new HttpHeaders();
-        String decodedRefreshToken = extractDecodedRefreshToken(URLDecoder.decode(refreshToken, "UTF-8"));
+        String decodedRefreshToken = extractDecodedToken(URLDecoder.decode(refreshToken, "UTF-8"));
         log.info(decodedRefreshToken);
         if (isTokenValid(decodedRefreshToken)) {
-            headers.add(accessHeader, createAccessToken(extractUserId(decodedRefreshToken).get()));
+            headers.add(accessHeader, "Bearer " + createAccessToken(extractUserId(decodedRefreshToken).get()));
             String newRefreshToken = createRefreshToken(extractUserId(decodedRefreshToken).get());
             ResponseCookie cookie = setCookieRefreshToken(newRefreshToken);
             headers.add("Set-Cookie", cookie.toString());
         } else {
             log.info("유효하지 않은 토큰");
             log.info(decodedRefreshToken);
+        }
+
+        return headers;
+    }
+
+    public HttpHeaders createHeaderWithDeletedCookie(String accessToken) {
+        HttpHeaders headers = new HttpHeaders();
+        String decodedAccessToken = extractDecodedToken(accessToken);
+        if (isTokenValid(decodedAccessToken)) {
+            ResponseCookie cookie = deleteCookieRefreshToken();
+            headers.add("Set-Cookie", cookie.toString());
+        } else {
+            log.info("유효하지 않은 토큰");
         }
 
         return headers;

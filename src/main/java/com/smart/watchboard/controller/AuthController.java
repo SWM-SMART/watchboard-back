@@ -9,10 +9,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -59,6 +56,15 @@ public class AuthController {
         HttpHeaders headers = jwtService.createHeaderWithTokens(refreshToken);
 
         return new ResponseEntity<>(headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/users/logout")
+    @Operation(summary = "로그아웃", description = "로그아웃을 위해 refreshToken 쿠키 만료")
+    public ResponseEntity<?> logout(@RequestHeader("Authorization") String accessToken) {
+        HttpHeaders headers = jwtService.createHeaderWithDeletedCookie(accessToken);
+        headers.setLocation(URI.create("/"));
+
+        return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
 }
