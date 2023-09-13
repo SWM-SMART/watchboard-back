@@ -31,6 +31,9 @@ public class Document {
     @OneToMany(mappedBy = "document")
     private List<UserDocument> userDocuments = new ArrayList<>();
 
+    @OneToOne(mappedBy = "document", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private File file;
+
     public Document(String documentName, Instant createdAt, Instant modifiedAt, boolean isDeleted) {
         this.documentName = documentName;
         this.createdAt = createdAt;

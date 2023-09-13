@@ -141,6 +141,11 @@ public class WhiteboardService {
         return documentResponseDto;
     }
 
+    public Document findDoc(long documentId) {
+        Document document = documentRepository.findByDocumentId(documentId);
+        return document;
+    }
+
     private DocumentCreatedResponseDto convertToDocumentCreatedResponseDto(Document document) {
         DocumentCreatedResponseDto dto = new DocumentCreatedResponseDto(document.getDocumentId(), document.getDocumentName(), document.getCreatedAt().toEpochMilli(), document.getModifiedAt().toEpochMilli());
         return dto;
