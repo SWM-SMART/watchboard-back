@@ -24,6 +24,7 @@ public class FileService {
         Document document = whiteboardService.findDoc(fileDto.getDocumentId());
         File file = File.builder()
                 .fileName(fileDto.getAudioFile().getOriginalFilename())
+                .objectKey("File/" + fileDto.getDocumentId() + "." + fileDto.getAudioFile().getOriginalFilename())
                 .path(fileDto.getPath())
                 .size(fileDto.getAudioFile().getSize())
                 .createdAt(Instant.now())
@@ -36,7 +37,6 @@ public class FileService {
     }
 
     public void updateFile(FileDto fileDto, long fileId) {
-        //Document document = whiteboardService.findDoc(fileDto.getDocumentId());
         Optional<File> file = findFile(fileId);
         File updatedFile = file.get();
         updatedFile.setFileName(fileDto.getAudioFile().getOriginalFilename());
