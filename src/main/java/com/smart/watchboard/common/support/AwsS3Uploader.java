@@ -1,9 +1,8 @@
 package com.smart.watchboard.common.support;
 
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.CannedAccessControlList;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.*;
 import com.smart.watchboard.dto.FileDto;
 import com.smart.watchboard.service.FileService;
 import lombok.RequiredArgsConstructor;
@@ -19,14 +18,14 @@ import java.io.InputStream;
 @Service
 @RequiredArgsConstructor
 public class AwsS3Uploader {
-    private static final String S3_BUCKET_DIRECTORY_NAME = "static";
+    private static final String S3_BUCKET_DIRECTORY_NAME = "file";
     private final AmazonS3Client amazonS3Client;
     private final FileService fileService;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
 
-    public String uploadImage(MultipartFile multipartFile, Long documentId, Long fileId) {
+    public String uploadFile(MultipartFile multipartFile, Long documentId, Long fileId) {
         ObjectMetadata objectMetadata = new ObjectMetadata();
         objectMetadata.setContentType(multipartFile.getContentType());
         objectMetadata.setContentLength(multipartFile.getSize());
@@ -42,7 +41,6 @@ public class AwsS3Uploader {
             if (fileId == null) {
                 fileService.createFile(fileDto);
             } else if (fileId != null) {
-                // 새로운 파일로 업데이트할 때 기존 파일 삭제할지 고민 필요
                 fileService.updateFile(fileDto, fileId);
             }
         } catch (IOException e) {
@@ -50,6 +48,28 @@ public class AwsS3Uploader {
             throw new IllegalStateException("S3 파일 업로드에 실패했습니다.");
         }
         return amazonS3Client.getUrl(bucket, fileName).toString();
+    }
+
+    public byte[] getFileContent(Long fileId) throws IOException {
+        String objectKey = fileService.findFile(fileId).get().getObjectKey();
+        S3Object s3Object = amazonS3Client.getObject(bucket, objectKey);
+        S3ObjectInputStream objectInputStream = s3Object.getObjectContent();
+
+        return objectInputStream.readAllBytes();
+    }
+
+    public void deleteFile(String filePath) {
+        try{
+            try {
+                amazonS3Client.deleteObject(bucket, filePath);
+            } catch (AmazonServiceException e) {
+                log.info(e.getErrorMessage());
+            }
+
+        } catch (Exception exception) {
+            log.info(exception.getMessage());
+        }
+        log.info("[S3Uploader] : S3에 있는 파일 삭제");
     }
 
 

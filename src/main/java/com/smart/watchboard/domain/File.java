@@ -20,7 +20,11 @@ public class File {
     private Long id;
 
     private String fileName;
+    private String objectKey;
+
+    @Column(columnDefinition = "varchar(1000)", nullable = false)
     private String path;
+
     private Long size;
     private Instant createdAt;
 
