@@ -38,8 +38,8 @@ public class GraphController {
     }
 
     @PostMapping("/abc")
-    public ResponseEntity<?> test(@RequestParam("audioFile1") MultipartFile audioFile1, @RequestParam(value = "fileID", required = false) Long fileId) throws UnsupportedAudioFileException, IOException {
-        audioConcatenator.concatenateAudioFiles(audioFile1, fileId);
+    public ResponseEntity<?> test(@RequestParam("audioFile1") MultipartFile audioFile1, @RequestParam(value = "fileID", required = false) Long fileId, @RequestParam(value = "documentID") Long documentId) throws UnsupportedAudioFileException, IOException {
+        audioConcatenator.concatenateAudioFiles(audioFile1, documentId, fileId);
         return new ResponseEntity<>("", HttpStatus.OK);
     }
 }

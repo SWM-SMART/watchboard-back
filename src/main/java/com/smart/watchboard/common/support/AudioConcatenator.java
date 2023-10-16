@@ -1,6 +1,7 @@
 package com.smart.watchboard.common.support;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -14,22 +15,27 @@ public class AudioConcatenator {
 
     private final AwsS3Uploader awsS3Uploader;
 
-    public void concatenateAudioFiles(MultipartFile multipartFile1, Long fileId) throws IOException {
-
+    public void concatenateAudioFiles(MultipartFile multipartFile1, Long documentId, Long fileId) throws IOException {
+// 오디오 파일 처음 만드는거면 파일을 먼저 생성해야함, 파일 존재하면 파일 아이디도 있다.
         // Read the data from the first MultipartFile
         byte[] data1 = multipartFile1.getBytes();
 
         // Read the data from the second MultipartFile
         //byte[] data2 = multipartFile2.getBytes();
         String outputPath = "/Users/kms/Downloads/output.wav";
+        String fileName = "output.wav"; // 파일 이름
+        String contentType = "audio/wav"; // 컨텐츠 타입
 
         // s3업로드 이어붙인 후 어떻게? multipartfile로 바꿔야 하나
         if (fileId != null) {
             byte[] data2 = awsS3Uploader.getFileContent(fileId);
             // Merge the data into a single byte array
             byte[] mergedData = mergeWavData(data2, data1);
+            MultipartFile multipartFile = convertByteArrayToMultipartFile(mergedData, fileName, contentType);
+            awsS3Uploader.uploadFile(multipartFile, documentId, fileId);
             writeWavFile(outputPath, mergedData);
         } else {
+            awsS3Uploader.uploadFile(multipartFile1, documentId, fileId);
             writeWavFile(outputPath, data1);
         }
 
@@ -99,5 +105,9 @@ public class AudioConcatenator {
         ByteBuffer.wrap(header, 40, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(dataLength);
 
         return header;
+    }
+
+    public MultipartFile convertByteArrayToMultipartFile(byte[] byteArray, String fileName, String contentType) {
+        return new MockMultipartFile(fileName, fileName, contentType, byteArray);
     }
 }
