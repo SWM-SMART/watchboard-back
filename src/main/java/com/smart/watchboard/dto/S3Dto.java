@@ -1,22 +1,20 @@
 package com.smart.watchboard.dto;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.springframework.web.multipart.MultipartFile;
 
 @Getter
 @Setter
-public class FileDto {
+@RequiredArgsConstructor
+public class S3Dto {
     private MultipartFile file;
-    private String path;
-    private String fileType;
     private Long documentId;
     private Long fileId;
 
-    public FileDto(MultipartFile multipartFile, String path, String fileType, Long documentId, Long fileId) {
-        this.file = multipartFile;
-        this.path = path;
-        this.fileType = fileType;
+    public S3Dto(MultipartFile file, long documentId, Long fileId) {
+        this.file = file;
         this.documentId = documentId;
         this.fileId = fileId;
     }

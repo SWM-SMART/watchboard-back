@@ -4,6 +4,7 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.*;
 import com.smart.watchboard.dto.FileDto;
+import com.smart.watchboard.dto.S3Dto;
 import com.smart.watchboard.service.FileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,23 +26,25 @@ public class AwsS3Uploader {
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
 
-    public String uploadFile(MultipartFile multipartFile, Long documentId, Long fileId) {
+    public String uploadFile(S3Dto s3Dto) {
         ObjectMetadata objectMetadata = new ObjectMetadata();
-        objectMetadata.setContentType(multipartFile.getContentType());
-        objectMetadata.setContentLength(multipartFile.getSize());
+        objectMetadata.setContentType(s3Dto.getFile().getContentType());
+        objectMetadata.setContentLength(s3Dto.getFile().getSize());
 
-        String fileName = S3_BUCKET_DIRECTORY_NAME + "/" + documentId + "." + multipartFile.getOriginalFilename();
+        String directoryName = s3Dto.getFile().getContentType();
+        String fileName = directoryName + "/" + s3Dto.getDocumentId() + "." + s3Dto.getFile().getOriginalFilename();
 
-        try (InputStream inputStream = multipartFile.getInputStream()) {
+        try (InputStream inputStream = s3Dto.getFile().getInputStream()) {
             amazonS3Client.putObject(new PutObjectRequest(bucket, fileName, inputStream, objectMetadata)
                     .withCannedAcl(CannedAccessControlList.PublicRead));
 
             String path = amazonS3Client.getResourceUrl(bucket, fileName);
-            FileDto fileDto = new FileDto(multipartFile, path, documentId);
-            if (fileId == null) {
+            System.out.println(s3Dto.getFile().getContentType());
+            FileDto fileDto = new FileDto(s3Dto.getFile(), path, s3Dto.getFile().getContentType(), s3Dto.getDocumentId(), s3Dto.getFileId());
+            if (s3Dto.getFileId() == null) {
                 fileService.createFile(fileDto);
-            } else if (fileId != null) {
-                fileService.updateFile(fileDto, fileId);
+            } else if (s3Dto.getFileId() != null) {
+                fileService.updateFile(fileDto);
             }
         } catch (IOException e) {
             log.error("S3 파일 업로드에 실패했습니다. {}", e.getMessage());

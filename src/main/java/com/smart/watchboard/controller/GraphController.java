@@ -31,7 +31,7 @@ public class GraphController {
     @PostMapping("/{documentID}")
     @Operation(summary = "마인드맵 생성", description = "음성 데이터를 받아 ai 서버에 마인드맵 요청한다.")
     public ResponseEntity<?> getMindmap(@PathVariable(value = "documentID") long documentId, @RequestParam("audioFile") MultipartFile audioFile, @RequestParam(value = "fileID", required = false) Long fileId, @RequestHeader("Authorization") String accessToken) {
-        awsS3Uploader.uploadFile(audioFile, documentId, fileId);
+        //awsS3Uploader.uploadFile(audioFile, documentId, fileId);
         //awsS3Uploader.deleteFile();
 
         return new ResponseEntity<>("{\"root\":1,\"keywords\":[\"나는\",\"eat\",\"food\",\"today\"],\"graph\":{\"1\":[0,2],\"2\":[3]}}", HttpStatus.OK);

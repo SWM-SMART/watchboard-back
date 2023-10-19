@@ -22,11 +22,13 @@ public class FileService {
 
     public void createFile(FileDto fileDto) {
         Document document = whiteboardService.findDoc(fileDto.getDocumentId());
+        String key = fileDto.getFileType() + "/" + fileDto.getDocumentId() + "." + fileDto.getFile().getOriginalFilename();
         File file = File.builder()
-                .fileName(fileDto.getAudioFile().getOriginalFilename())
-                .objectKey("File/" + fileDto.getDocumentId() + "." + fileDto.getAudioFile().getOriginalFilename())
+                .fileName(fileDto.getFile().getOriginalFilename())
+                .objectKey(key)
                 .path(fileDto.getPath())
-                .size(fileDto.getAudioFile().getSize())
+                .fileType(fileDto.getFileType())
+                .size(fileDto.getFile().getSize())
                 .createdAt(Instant.now())
                 .modifiedAt(Instant.now())
                 .isDelete(false)
@@ -36,20 +38,22 @@ public class FileService {
         fileRepository.save(file);
     }
 
-    public void updateFile(FileDto fileDto, long fileId) {
-        Optional<File> file = findFile(fileId);
+    public void updateFile(FileDto fileDto) {
+        Optional<File> file = findFile(fileDto.getFileId());
         File updatedFile = file.get();
-        updatedFile.setFileName(fileDto.getAudioFile().getOriginalFilename());
+        updatedFile.setFileName(fileDto.getFile().getOriginalFilename());
         updatedFile.setPath(fileDto.getPath());
-        updatedFile.setSize(fileDto.getAudioFile().getSize());
+        updatedFile.setSize(fileDto.getFile().getSize());
         updatedFile.setCreatedAt(Instant.now());
         updatedFile.setModifiedAt(Instant.now());
-
         fileRepository.save(updatedFile);
     }
 
-    public void deleteFile(MultipartFile multipartFile, long documentId) {
-        return;
+    public void deleteFile(long fileId) {
+        Optional<File> file = findFile(fileId);
+        File deletedFile = file.get();
+        deletedFile.setDelete(true);
+        fileRepository.save(deletedFile);
     }
 
     public Optional<File> findFile(long fileId) {

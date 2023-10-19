@@ -32,10 +32,10 @@ public class AudioConcatenator {
             // Merge the data into a single byte array
             byte[] mergedData = mergeWavData(data2, data1);
             MultipartFile multipartFile = convertByteArrayToMultipartFile(mergedData, fileName, contentType);
-            awsS3Uploader.uploadFile(multipartFile, documentId, fileId);
+            //awsS3Uploader.uploadFile(multipartFile, documentId, fileId);
             writeWavFile(outputPath, mergedData);
         } else {
-            awsS3Uploader.uploadFile(multipartFile1, documentId, fileId);
+            //awsS3Uploader.uploadFile(multipartFile1, documentId, fileId);
             writeWavFile(outputPath, data1);
         }
 
