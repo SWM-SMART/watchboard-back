@@ -24,6 +24,7 @@ public class File {
 
     @Column(columnDefinition = "varchar(1000)", nullable = false)
     private String path;
+    private String fileType;
 
     private Long size;
     private Instant createdAt;

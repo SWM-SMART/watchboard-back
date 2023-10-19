@@ -7,14 +7,17 @@ import org.springframework.web.multipart.MultipartFile;
 @Getter
 @Setter
 public class FileDto {
-    private MultipartFile audioFile;
+    private MultipartFile file;
     private String path;
+    private String fileType;
     private Long documentId;
-    private String accessToken;
+    private Long fileId;
 
-    public FileDto(MultipartFile multipartFile, String path, Long documentId) {
-        this.audioFile = multipartFile;
+    public FileDto(MultipartFile multipartFile, String path, String fileType, Long documentId, Long fileId) {
+        this.file = multipartFile;
         this.path = path;
+        this.fileType = fileType;
         this.documentId = documentId;
+        this.fileId = fileId;
     }
 }
