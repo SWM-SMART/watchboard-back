@@ -1,11 +1,17 @@
 package com.smart.watchboard.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.smart.watchboard.domain.Document;
 import com.smart.watchboard.domain.File;
 import com.smart.watchboard.dto.FileDto;
 import com.smart.watchboard.repository.FileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -62,4 +68,19 @@ public class FileService {
         return file;
     }
 
+    public String createResponseBody(ResponseEntity<String> keywordResponseEntity, String text) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode = objectMapper.readTree(keywordResponseEntity.getBody());
+        ((ObjectNode) jsonNode).put("text", text);
+        String updatedJsonString = jsonNode.toString();
+
+        return updatedJsonString;
+
+    }
+
+    public void deleteAudioFile(Long documentId) {
+        File file = fileRepository.findByDocument(documentId);
+        file.setDelete(true);
+        fileRepository.save(file);
+    }
 }
