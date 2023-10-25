@@ -17,7 +17,7 @@ import java.io.IOException;
 
 @RestController
 @RequestMapping("/documents")
-@Tag(name = "pdf 학습파일 API", description = "학습파일 관련 API")
+@Tag(name = "강의 녹음파일 API", description = "강의 녹음파일 관련 API")
 @RequiredArgsConstructor
 @Slf4j
 public class AudioFileController {
@@ -60,12 +60,11 @@ public class AudioFileController {
         String path = awsS3Uploader.uploadFile(s3Dto);
 
         String sttResult = sttService.getSTT(path);
-        // STT mysql에 업데이트
         noteService.updateNote(documentId, sttResult);
 
         ResponseEntity<String> responseEntity = requestService.requestSTTKeywords(sttResult);
         String summary = requestService.requestSTTSummary(sttResult);
-        //summaryService.
+        summaryService.updateSummary(documentId, summary);
 
         String body = fileService.createResponseBody(responseEntity, sttResult);
 
@@ -73,10 +72,14 @@ public class AudioFileController {
     }
 
     @DeleteMapping("/{documentID}/audio")
-    public ResponseEntity<?> deleteAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam(value = "fileID", required = false) Long fileId, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
-        //fileService.deleteFile(fileId);
+    public ResponseEntity<?> deleteAudioFile(@PathVariable(value = "documentID") long documentId, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
+        fileService.deleteAudioFile(documentId);
+        // 음성 파일 삭제 했을 때, Stt, 요약본, 마인드맵 모두 삭제 처리
+        noteService.deleteNote(documentId);
+        summaryService.deleteSummary(documentId);
+        // 마인드맵 삭제 구현
 
-        return new ResponseEntity<>("", HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PostMapping("/testffff")
