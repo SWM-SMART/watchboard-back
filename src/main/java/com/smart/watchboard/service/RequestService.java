@@ -1,5 +1,8 @@
 package com.smart.watchboard.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smart.watchboard.repository.FileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,22 +29,24 @@ public class RequestService {
         headers.set("Content-Type", "application/json");
 
         // 요청 본문 추가
-        // pdf: s3링크, stt: mysql 데이터 분기처리
-        //String pdfPath = fileRepository.findBy
-        String requestBody = "{\"key\": \"" + filePath + "\", \"db\": \"s3\"}";
-        System.out.println(requestBody);
+        String requestBody = """
+                {
+                  "dbInfo": {
+                    "key": %s,
+                    "db": "s3"
+                  }
+                }
+                """.formatted(filePath);
         HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
 
         // 요청 보내기
         ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
-        //ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
+
         return responseEntity;
     }
 
-
-
     // 수정필요
-    public ResponseEntity<String> requestSTTKeywords(String filePath) {
+    public ResponseEntity<String> requestSTTKeywords(String text) {
         RestTemplate restTemplate = new RestTemplate();
         //String url = "https:/{aiurl}/keywords";
         String url = "http://echo.jsontest.com/key/value/one/two";
@@ -50,10 +55,15 @@ public class RequestService {
         headers.set("Content-Type", "application/json");
 
         // 요청 본문 추가
-        // pdf: s3링크, stt: mysql 데이터 분기처리
-        //String pdfPath = fileRepository.findBy
-        String requestBody = "{\"key\": \"" + filePath + "\", \"db\": \"mysql\"}";
-        System.out.println(requestBody);
+        //String requestBody = "{\"key\": \"" + filePath + "\", \"db\": \"mysql\"}";
+        String requestBody = """
+                {
+                  "dbInfo": {
+                    "key": %s,
+                    "db": "mysql"
+                  }
+                }
+                """.formatted(text);
         HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
 
         // 요청 보내기
@@ -71,10 +81,14 @@ public class RequestService {
         headers.set("Content-Type", "application/json");
 
         // 요청 본문 추가
-        // pdf: s3링크, stt: mysql 데이터 분기처리
-        //String pdfPath = fileRepository.findBy
-        String requestBody = "{\"key\": \"" + filePath + "\", \"db\": \"s3\"}";
-        System.out.println(requestBody);
+        String requestBody = """
+                {
+                  "dbInfo": {
+                    "key": %s,
+                    "db": "s3"
+                  }
+                }
+                """.formatted(filePath);
         HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
 
         // 요청 보내기
@@ -83,7 +97,7 @@ public class RequestService {
         return responseEntity;
     }
 
-    public void requestSTTSummary(String filePath) {
+    public String requestSTTSummary(String sttResult) throws JsonProcessingException {
         RestTemplate restTemplate = new RestTemplate();
         //String url = "https:/{aiurl}/mindmap";
         String url = "http://echo.jsontest.com/key/value/one/two";
@@ -92,18 +106,26 @@ public class RequestService {
         headers.set("Content-Type", "application/json");
 
         // 요청 본문 추가
-        // pdf: s3링크, stt: mysql 데이터 분기처리
-        //String pdfPath = fileRepository.findBy
-        String requestBody = "{\"key\": \"" + filePath + "\", \"db\": \"mysql\"}";
-        System.out.println(requestBody);
+        String requestBody = """
+                {
+                  "dbInfo": {
+                    "key": %s,
+                    "db": "mysql"
+                  }
+                }
+                """.formatted(sttResult);
         HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
 
         // 요청 보내기
         ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
         //ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
 
-        //요약본 rdb에 저장
-        //
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode = objectMapper.readTree(responseEntity.getBody());
+        String text = jsonNode.get("summary").asText();
+
+        //return responseEntity;
+        return text;
     }
 
 
@@ -116,10 +138,7 @@ public class RequestService {
         headers.set("Content-Type", "application/json");
 
         // 요청 본문 추가
-        // pdf: s3링크, stt: mysql 데이터 분기처리
-        //String pdfPath = fileRepository.findBy
         String requestBody = "{\"key\": \"" + filePath + "\", \"db\": \"s3\"}";
-        System.out.println(requestBody);
         HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
 
         // 요청 보내기
