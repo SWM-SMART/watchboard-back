@@ -6,7 +6,6 @@ import com.smart.watchboard.service.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +26,7 @@ public class AudioFileController {
     private final STTService sttService;
     private final SummaryService summaryService;
     private final FileService fileService;
+    private final MindmapService mindmapService;
 
     @PostMapping("/{documentID}/audio")
     public ResponseEntity<?> uploadAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audioFile") MultipartFile audioFile, @RequestParam(value = "fileID", required = false) Long fileId, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
@@ -78,29 +78,31 @@ public class AudioFileController {
         noteService.deleteNote(documentId);
         summaryService.deleteSummary(documentId);
         // 마인드맵 삭제 구현
+        mindmapService.deleteMindmap(documentId);
 
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PostMapping("/testffff")
     public ResponseEntity<?> test(@RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
-//        String body = """
-//                {
-//                    "keywords": ["asd", "qwe", "baad"]
-//                }
-//                """;
-//        ResponseEntity<String> response1 = new ResponseEntity<>(body, HttpStatus.OK);
-//        String summary = "qqqqqqqq";
-//        System.out.println(response1.getBody());
-//        String body2 = fileService.createResponseBody(response1, summary);
+        String body = """
+                    {
+                        "root":1,
+                        "keywords":["나는","eat","food","today"],
+                        "graph":{"1":[0,2],"2":[3]}
+                    }
+                """;
+        ResponseEntity<String> response1 = new ResponseEntity<>(body, HttpStatus.OK);
 
-        String text = "asdasdasd";
-        noteService.updateNote(9L, text);
+        //mindmapService.createMindmap(response1, 11L, "audio");
+        mindmapService.deleteMindmap(11L);
+        //MindmapDto mindmapDto = mindmapService.getMindmap(11L);
+        ResponseEntity<?> ss = new ResponseEntity<>("", HttpStatus.OK);
 
 
 
         // 응답 키워드, stt
-        return new ResponseEntity<>("", HttpStatus.OK);
+        return ss;
     }
 
 }
