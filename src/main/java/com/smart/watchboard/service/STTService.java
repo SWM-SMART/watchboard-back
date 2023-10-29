@@ -42,7 +42,6 @@ public class STTService {
         JsonNode jsonNode = objectMapper.readTree(responseEntity.getBody());
 
         String text = jsonNode.get("text").asText();
-        System.out.println(text);
 
         return text;
     }

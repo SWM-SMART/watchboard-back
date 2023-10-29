@@ -1,5 +1,6 @@
 package com.smart.watchboard.common.support;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Service;
@@ -10,6 +11,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class AudioConcatenator {
 
