@@ -8,6 +8,7 @@ import com.smart.watchboard.domain.Document;
 import com.smart.watchboard.domain.File;
 import com.smart.watchboard.dto.FileDto;
 import com.smart.watchboard.repository.FileRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,7 @@ import java.time.Instant;
 import java.util.Optional;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 @Slf4j
 public class FileService {
@@ -79,7 +81,8 @@ public class FileService {
     }
 
     public void deleteAudioFile(Long documentId) {
-        File file = fileRepository.findByDocument(documentId);
+        Document document = whiteboardService.findDoc(documentId);
+        File file = fileRepository.findByDocument(document);
         file.setDelete(true);
         fileRepository.save(file);
     }
