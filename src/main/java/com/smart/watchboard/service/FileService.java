@@ -70,6 +70,17 @@ public class FileService {
         return file;
     }
 
+    public String getPdfUrl(Long documentId) {
+        Document document = whiteboardService.findDoc(documentId);
+        File file = fileRepository.findByDocument(document);
+        String body = """
+                {
+                    "url": %s
+                }
+                """.formatted(file.getPath());
+        return body;
+    }
+
     public String createResponseBody(ResponseEntity<String> keywordResponseEntity, String text) throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode jsonNode = objectMapper.readTree(keywordResponseEntity.getBody());
