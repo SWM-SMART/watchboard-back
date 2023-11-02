@@ -1,6 +1,7 @@
 package com.smart.watchboard.controller;
 
 import com.smart.watchboard.common.support.AwsS3Uploader;
+import com.smart.watchboard.domain.File;
 import com.smart.watchboard.dto.FileDto;
 import com.smart.watchboard.dto.S3Dto;
 import com.smart.watchboard.service.FileService;
@@ -51,12 +52,22 @@ public class LearningFileController {
         return new ResponseEntity<>("", HttpStatus.OK);
     }
 
-    @GetMapping("/test")
-    public ResponseEntity<?> test() {
-        String path = "abcd";
-        ResponseEntity<String> responseEntity = requestService.requestPdfKeywords(path);
+    @GetMapping("/{documentID}/pdf")
+    public ResponseEntity<?> getLearningFile(@PathVariable(value = "documentID") long documentId, @RequestHeader("Authorization") String accessToken) {
+        String body = fileService.getPdfUrl(documentId);
+        ResponseEntity<?> responseEntity = new ResponseEntity<>(body, HttpStatus.OK);
 
-        return new ResponseEntity<>(responseEntity.getBody(), HttpStatus.OK);
+        return responseEntity;
+    }
+
+    @GetMapping("/test")
+    public ResponseEntity<?> test(@RequestHeader("Authorization") String accessToken) {
+        //String path = "abcd";
+        //ResponseEntity<String> responseEntity = requestService.requestPdfKeywords(path);
+        String body = fileService.getPdfUrl(4L);
+        System.out.println(body);
+
+        return new ResponseEntity<>(body, HttpStatus.OK);
 
     }
 }
