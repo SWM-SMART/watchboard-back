@@ -1,7 +1,11 @@
 package com.smart.watchboard.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.smart.watchboard.common.support.AwsS3Uploader;
+import com.smart.watchboard.domain.File;
+import com.smart.watchboard.domain.SttData;
 import com.smart.watchboard.dto.S3Dto;
+import com.smart.watchboard.dto.SttDto;
 import com.smart.watchboard.service.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/documents")
@@ -22,6 +27,7 @@ import java.io.IOException;
 public class AudioFileController {
     private final AwsS3Uploader awsS3Uploader;
     private final NoteService noteService;
+    private final LectureNoteService lectureNoteService;
     private final RequestService requestService;
     private final STTService sttService;
     private final SummaryService summaryService;
@@ -35,11 +41,12 @@ public class AudioFileController {
         S3Dto s3Dto = new S3Dto(audioFile, documentId, fileId);
         String path = awsS3Uploader.uploadFile(s3Dto);
         // STT
-        String sttResult = sttService.getSTT(path);
-        //String sttResult = "알겠습니다. 나지 할게 나는 뭐 바꿨냐면 어제는 api 요청 방식 수정을 이게 뭔 얘기냐면 아까 얘기했듯이 ss를 최대한 활용을 하면서 그러니까 클라이언트 쪽에서 요청받은 거를 받아서 쿠키를 복제해서 서버에서 이제 api 콜을 하고 그거를 받아서 이제 다시 조합해서 클라이언트한테 돌려주는 방식이었는데 그거를 이제 약간 틀 같은 것만 ssr로 해서 받고 거기에 이제 내용을 채워넣는 거 그러니까 api 콜 했다가 받아서 채워넣는 그 부분은 클라이언트에서 하는 게 사실상 로딩 그러니까 첫 화면이 보일 때까지 시간이 더 짧다고 판단을 해서 그거를 바꿨어요. 그래서 그거를 수정을 다 하지 못했고 그러니까 이렇게 해야겠다라고 생각하고 이게 어떤 식으로 적용되는지 그런 것도 좀 테스트하고 그런데 시간을 좀 할애했고 이제 아마 오늘은 이 작업을 마무리 하지 않을까 그리고 어려운 리팩터링 할 때 엄청 많았다. 다 끝 그러면 나는 일단 자연호전 처리 확인이라고 한 게 저번에 얘기했었던 컨시스턴트 파싱에 대해서 조금 더 알아봤고 그리고 논문을 계속 보고 있고 그에 관해서 일단 오늘은 그거를 토대로 지니 생성을 하는 코드를 작성하고 디터브 리서치 래퍼를 생성해서 거의 다 그냥 아예 정리해서 드래프트랑 연결해 놓으려고 너무 더러워 보일 것 같아서 드리프트를 하니까 오늘 깨달았어 그리고 코프 인코더 구조 확인하고 백준 한 문제 풀기 딱 그리고 솔직히 예전보다는 지금은 확실히 아예 탄탄대로인 것 같아요. 아예 뭔가 아예 없는 상태가 아니라 뭔가 있는 상태여서 장애는 없었습니다. 일단 저는 스웨거 곡 api 작정을 끝냈는데 네 민석이가 뭐 수정하고 있어 그래 내 거에 수정을 하나 해놓고 이제 고 모비api 일단 현재까지 api는 작성을 다 했고 그리고 이제 erd 작성에 대해서 좀 고민을 하고 있었는데 그 팀 테이블 넣는 거 그래서 그거를 관계 설정을 어떻게 할까 그게 조금 어려운 고 이제 어떤 관계로 설정할지 못해서 이제 이거를 식별로 해야 할지 비족별로 해야 할지 그래서 그런 부분에서 좀 어려움이 있었고 그리고 오늘은 이제 이번 주에 스프링 시큐리티랑 로그인 구현을 마무리하기로 했으니까 일단 그거를 진행할 것 같습니다. 카카오 문제 풀기는 시간이 나면 하고요 시간이 아마 날지는 모르겠는데 그렇습니다.";
-
-        // STT mysql에 저장
-        noteService.createNote(documentId, sttResult);
+        //String sttResult = sttService.getSTT(path);
+        ResponseEntity<String> sttResponseEntity = sttService.getSTT(path);
+        String sttResult = sttService.getText(sttResponseEntity);
+        List<SttData> data = sttService.getSTTData(sttResponseEntity);
+        lectureNoteService.createLectureNote(documentId, data);
+        //noteService.createNote(documentId, sttResult);
 
         // STT 키워드 요청
         ResponseEntity<String> responseEntity = requestService.requestSTTKeywords(sttResult);
@@ -48,7 +55,8 @@ public class AudioFileController {
         String summary = requestService.requestSTTSummary(sttResult);
         summaryService.createSummary(documentId, summary);
 
-        String body = fileService.createResponseBody(responseEntity, sttResult);
+        //String body = fileService.createResponseBody(responseEntity, sttResult);
+        SttDto body = fileService.createResponseBody(path, data);
 
         // 응답 키워드, stt
         return new ResponseEntity<>(body, HttpStatus.OK);
@@ -59,16 +67,20 @@ public class AudioFileController {
         S3Dto s3Dto = new S3Dto(audioFile, documentId, fileId);
         String path = awsS3Uploader.uploadFile(s3Dto);
 
-        String sttResult = sttService.getSTT(path);
-        noteService.updateNote(documentId, sttResult);
+        ResponseEntity<String> sttResponseEntity = sttService.getSTT(path);
+        String sttResult = sttService.getText(sttResponseEntity);
+        List<SttData> data = sttService.getSTTData(sttResponseEntity);
 
-        ResponseEntity<String> responseEntity = requestService.requestSTTKeywords(sttResult);
-        String summary = requestService.requestSTTSummary(sttResult);
-        summaryService.updateSummary(documentId, summary);
+        //String sttResult = sttService.getSTT(path);
+//        noteService.updateNote(documentId, sttResult);
+//
+//        ResponseEntity<String> responseEntity = requestService.requestSTTKeywords(sttResult);
+//        String summary = requestService.requestSTTSummary(sttResult);
+//        summaryService.updateSummary(documentId, summary);
+//
+//        String body = fileService.createResponseBody(responseEntity, sttResult);
 
-        String body = fileService.createResponseBody(responseEntity, sttResult);
-
-        return new ResponseEntity<>(body, HttpStatus.OK);
+        return new ResponseEntity<>("", HttpStatus.OK);
     }
 
     @DeleteMapping("/{documentID}/audio")
@@ -83,25 +95,58 @@ public class AudioFileController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @GetMapping("/{documentID}/audio")
+    public ResponseEntity<?> getAudioFile(@PathVariable(value = "documentID") long documentId, @RequestHeader("Authorization") String accessToken) throws JsonProcessingException {
+        String path = fileService.getPath(documentId);
+        List<SttData> data = lectureNoteService.getData(documentId);
+        SttDto body = fileService.createResponseBody(path, data);
+        ResponseEntity<?> responseEntity = new ResponseEntity<>(body, HttpStatus.OK);
+        return responseEntity;
+    }
+
     @PostMapping("/testffff")
     public ResponseEntity<?> test(@RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
         String body = """
-                    {
-                        "root":1,
-                        "keywords":["나는","eat","food","today"],
-                        "graph":{"1":[0,2],"2":[3]}
-                    }
+                {
+                    "segments":[
+                        {
+                            "start":0,
+                            "end":7827,
+                            "text":"알겠습니다. 나지 할게 나는 뭐 바꿨냐면 어제는 api 요청 방식 수정을",
+                            "confidence":0.8284265,
+                            "diarization":{
+                            "label":"1"
+                            },
+                            "speaker":{},
+                            "words":[],
+                            "textEdited":"알겠습니다. 나지 할게 나는 뭐 바꿨냐면 어제는 api 요청 방식 수정을"
+                        },
+                        {
+                            "start":7827,
+                            "end":12412,
+                            "text":"이게 뭔 얘기냐면 아까 얘기했듯이",
+                            "confidence":0.92000407,
+                            "diarization":{
+                                "label":"2"
+                            },
+                            "speaker":{
+                                "label":"2",
+                                "name":"B",
+                                "edited":false
+                            },
+                            "words":[],
+                            "textEdited":"이게 뭔 얘기냐면 아까 얘기했듯이"
+                        }
+                    ]
+                }
                 """;
         ResponseEntity<String> response1 = new ResponseEntity<>(body, HttpStatus.OK);
-
-        //mindmapService.createMindmap(response1, 11L, "audio");
-        mindmapService.deleteMindmap(11L);
-        //MindmapDto mindmapDto = mindmapService.getMindmap(11L);
-        ResponseEntity<?> ss = new ResponseEntity<>("", HttpStatus.OK);
-
-
-
-        // 응답 키워드, stt
+        List<SttData> data = sttService.getSTTData(response1);
+        System.out.println(data.get(0).getText());
+        lectureNoteService.createLectureNote(100L, data);
+        String path = "naver.com";
+        SttDto body2 = fileService.createResponseBody(path, data);
+        ResponseEntity<?> ss = new ResponseEntity<>(body2, HttpStatus.OK);
         return ss;
     }
 
