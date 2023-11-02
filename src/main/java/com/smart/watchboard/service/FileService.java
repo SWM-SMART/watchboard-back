@@ -6,7 +6,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.smart.watchboard.domain.Document;
 import com.smart.watchboard.domain.File;
+import com.smart.watchboard.domain.SttData;
 import com.smart.watchboard.dto.FileDto;
+import com.smart.watchboard.dto.SttDto;
 import com.smart.watchboard.repository.FileRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -81,14 +84,19 @@ public class FileService {
         return body;
     }
 
-    public String createResponseBody(ResponseEntity<String> keywordResponseEntity, String text) throws JsonProcessingException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = objectMapper.readTree(keywordResponseEntity.getBody());
-        ((ObjectNode) jsonNode).put("text", text);
-        String updatedJsonString = jsonNode.toString();
+//    public String createResponseBody2(ResponseEntity<String> keywordResponseEntity, String text) throws JsonProcessingException {
+//        ObjectMapper objectMapper = new ObjectMapper();
+//        JsonNode jsonNode = objectMapper.readTree(keywordResponseEntity.getBody());
+//        ((ObjectNode) jsonNode).put("text", text);
+//        String updatedJsonString = jsonNode.toString();
+//
+//        return updatedJsonString;
+//
+//    }
 
-        return updatedJsonString;
-
+    public SttDto createResponseBody(String path, List<SttData> data) throws JsonProcessingException {
+        SttDto sttDto = new SttDto(path, data);
+        return sttDto;
     }
 
     public void deleteAudioFile(Long documentId) {
@@ -96,5 +104,11 @@ public class FileService {
         File file = fileRepository.findByDocument(document);
         file.setDelete(true);
         fileRepository.save(file);
+    }
+
+    public String getPath(Long documentId) {
+        Document document = whiteboardService.findDoc(documentId);
+        File file = fileRepository.findByDocument(document);
+        return file.getPath();
     }
 }
