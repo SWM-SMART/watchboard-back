@@ -1,10 +1,13 @@
 package com.smart.watchboard.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.smart.watchboard.common.support.AwsS3Uploader;
 import com.smart.watchboard.domain.File;
 import com.smart.watchboard.dto.FileDto;
+import com.smart.watchboard.dto.KeywordsDto;
 import com.smart.watchboard.dto.S3Dto;
 import com.smart.watchboard.service.FileService;
+import com.smart.watchboard.service.MindmapService;
 import com.smart.watchboard.service.RequestService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +19,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping("/documents")
@@ -28,7 +33,7 @@ public class LearningFileController {
     private final RequestService requestService;
 
     @PostMapping("/{documentID}/pdf")
-    public ResponseEntity<?> uploadLearningFile(@PathVariable(value = "documentID") long documentId, @RequestParam("pdfFile") MultipartFile pdfFile, @RequestParam(value = "fileID", required = false) Long fileId, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
+    public ResponseEntity<?> uploadLearningFile(@PathVariable(value = "documentID") long documentId, @RequestParam("pdf") MultipartFile pdfFile, @RequestParam(value = "fileID", required = false) Long fileId, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
         S3Dto s3Dto = new S3Dto(pdfFile, documentId, fileId);
         String path = awsS3Uploader.uploadFile(s3Dto);
         ResponseEntity<String> responseEntity = requestService.requestPdfKeywords(path);
@@ -37,7 +42,7 @@ public class LearningFileController {
     }
 
     @PutMapping("/{documentID}/pdf")
-    public ResponseEntity<?> updateLearningFile(@PathVariable(value = "documentID") long documentId, @RequestParam("pdfFile") MultipartFile pdfFile, @RequestParam(value = "fileID", required = false) Long fileId, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
+    public ResponseEntity<?> updateLearningFile(@PathVariable(value = "documentID") long documentId, @RequestParam("pdf") MultipartFile pdfFile, @RequestParam(value = "fileID", required = false) Long fileId, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
         S3Dto s3Dto = new S3Dto(pdfFile, documentId, fileId);
         String path = awsS3Uploader.uploadFile(s3Dto);
         ResponseEntity<String> responseEntity = requestService.requestPdfKeywords(path);
@@ -61,13 +66,32 @@ public class LearningFileController {
     }
 
     @GetMapping("/test")
-    public ResponseEntity<?> test(@RequestHeader("Authorization") String accessToken) {
+    public ResponseEntity<?> test(@RequestHeader("Authorization") String accessToken) throws JsonProcessingException {
         //String path = "abcd";
         //ResponseEntity<String> responseEntity = requestService.requestPdfKeywords(path);
-        String body = fileService.getPdfUrl(4L);
-        System.out.println(body);
+//        String xx = """
+//                {"root":1,"keywords":["나는","eat","food","today"],"graph":{"1":[0,2],"2":[3]}}
+//                """;
 
-        return new ResponseEntity<>(body, HttpStatus.OK);
+        String xx = """
+                {
+                	"add": ["추가할", "키워드", "목록"],
+                	"delete": ["eat"],
+                }
+                """;
+//        List<String> add = new ArrayList<>();
+//        add.add("추가할");
+//        add.add("키워드");
+//        List<String> delete = new ArrayList<>();
+//        delete.add("eat");
+//        KeywordsDto keywordsDto = new KeywordsDto(add, delete);
+        //ResponseEntity<String> entity = new ResponseEntity<>(xx, HttpStatus.OK);
+//        mindmapService.updateKeywords(keywordsDto, 11L);
+        //mindmapService.createMindmap(entity, 11L, "pdf");
+        //String body = fileService.getPdfUrl(4L);
+        //System.out.println(body);
+
+        return new ResponseEntity<>("", HttpStatus.OK);
 
     }
 }

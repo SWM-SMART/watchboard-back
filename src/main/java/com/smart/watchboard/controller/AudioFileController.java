@@ -48,7 +48,7 @@ public class AudioFileController {
         lectureNoteService.createLectureNote(documentId, data);
         //noteService.createNote(documentId, sttResult);
 
-        // STT 키워드 요청
+        // STT 키워드 요청 마인드맵 요청 -> 마인드맵 생성
         ResponseEntity<String> responseEntity = requestService.requestSTTKeywords(sttResult);
 
         // 요약본 요청
