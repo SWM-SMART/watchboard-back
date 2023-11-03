@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smart.watchboard.domain.Document;
 import com.smart.watchboard.domain.Mindmap;
+import com.smart.watchboard.dto.KeywordsDto;
 import com.smart.watchboard.dto.MindmapDto;
 import com.smart.watchboard.repository.MindmapRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -60,5 +62,21 @@ public class MindmapService {
 
     public void deleteMindmap(Long documentId) {
         mindmapRepository.deleteByDocumentId(documentId);
+    }
+
+    public void updateKeywords(KeywordsDto keywordsDto, Long documentId) {
+        Optional<Mindmap> mindmap = mindmapRepository.findByDocumentId(documentId);
+        List<String> keywords = mindmap.get().getKeywords();
+        List<String> addKeywords = keywordsDto.getAdd();
+        List<String> deleteKeywords = keywordsDto.getDelete();
+
+        List<String> newKeywords = new ArrayList<>(keywords);
+        newKeywords.removeAll(deleteKeywords);
+        newKeywords.addAll(addKeywords);
+
+        Mindmap updatedMindmap = mindmap.orElse(null);
+        updatedMindmap.setKeywords(newKeywords);
+
+        mindmapRepository.save(updatedMindmap);
     }
 }
