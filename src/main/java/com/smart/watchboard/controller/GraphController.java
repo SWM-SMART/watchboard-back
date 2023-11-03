@@ -3,6 +3,7 @@ package com.smart.watchboard.controller;
 import com.smart.watchboard.common.support.AudioConcatenator;
 import com.smart.watchboard.common.support.AwsS3Uploader;
 import com.smart.watchboard.dto.KeywordsDto;
+import com.smart.watchboard.dto.MindmapDto;
 import com.smart.watchboard.service.FileService;
 import com.smart.watchboard.service.MindmapService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,12 +33,21 @@ public class GraphController {
 
     @PostMapping("/graph/{documentID}")
     @Operation(summary = "마인드맵 생성", description = "음성 데이터를 받아 ai 서버에 마인드맵 요청한다.")
-    public ResponseEntity<?> getMindmap(@PathVariable(value = "documentID") long documentId, @RequestParam("audioFile") MultipartFile audioFile, @RequestParam(value = "fileID", required = false) Long fileId, @RequestHeader("Authorization") String accessToken) {
+    public ResponseEntity<?> createMindmap(@PathVariable(value = "documentID") long documentId, @RequestParam("audioFile") MultipartFile audioFile, @RequestParam(value = "fileID", required = false) Long fileId, @RequestHeader("Authorization") String accessToken) {
         //awsS3Uploader.uploadFile(audioFile, documentId, fileId);
         //awsS3Uploader.deleteFile();
 
         return new ResponseEntity<>("{\"root\":1,\"keywords\":[\"나는\",\"eat\",\"food\",\"today\"],\"graph\":{\"1\":[0,2],\"2\":[3]}}", HttpStatus.OK);
     }
+
+    @GetMapping("/documents/{documentID}/mindmap")
+    @Operation(summary = "마인드맵 조회", description = "마인드맵 조회")
+    public ResponseEntity<?> getMindmap(@PathVariable(value = "documentID") long documentId, @RequestHeader("Authorization") String accessToken) {
+        MindmapDto mindmapDto = mindmapService.getMindmap(documentId);
+
+        return new ResponseEntity<>(mindmapDto, HttpStatus.OK);
+    }
+
 
     @PutMapping("/documents/{documentID}/mindmap/keyword")
     @Operation(summary = "키워드 업데이트", description = "키워드 추가 및 삭제")
