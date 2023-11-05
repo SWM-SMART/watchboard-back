@@ -33,8 +33,8 @@ public class LearningFileController {
     private final RequestService requestService;
 
     @PostMapping("/{documentID}/pdf")
-    public ResponseEntity<?> uploadLearningFile(@PathVariable(value = "documentID") long documentId, @RequestParam("pdf") MultipartFile pdfFile, @RequestParam(value = "fileID", required = false) Long fileId, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
-        S3Dto s3Dto = new S3Dto(pdfFile, documentId, fileId);
+    public ResponseEntity<?> uploadLearningFile(@PathVariable(value = "documentID") long documentId, @RequestParam("pdf") MultipartFile pdfFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
+        S3Dto s3Dto = new S3Dto(pdfFile, documentId);
         String path = awsS3Uploader.uploadFile(s3Dto);
         ResponseEntity<String> responseEntity = requestService.requestPdfKeywords(path);
 
@@ -42,8 +42,8 @@ public class LearningFileController {
     }
 
     @PutMapping("/{documentID}/pdf")
-    public ResponseEntity<?> updateLearningFile(@PathVariable(value = "documentID") long documentId, @RequestParam("pdf") MultipartFile pdfFile, @RequestParam(value = "fileID", required = false) Long fileId, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
-        S3Dto s3Dto = new S3Dto(pdfFile, documentId, fileId);
+    public ResponseEntity<?> updateLearningFile(@PathVariable(value = "documentID") long documentId, @RequestParam("pdf") MultipartFile pdfFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
+        S3Dto s3Dto = new S3Dto(pdfFile, documentId);
         String path = awsS3Uploader.uploadFile(s3Dto);
         ResponseEntity<String> responseEntity = requestService.requestPdfKeywords(path);
 
@@ -66,7 +66,10 @@ public class LearningFileController {
     }
 
     @GetMapping("/test")
-    public ResponseEntity<?> test(@RequestHeader("Authorization") String accessToken) throws JsonProcessingException {
+    public ResponseEntity<?> test(@RequestHeader("Authorization") String accessToken, @RequestParam("pdf") MultipartFile pdfFile) throws JsonProcessingException {
+        S3Dto s3Dto = new S3Dto(pdfFile, 11L);
+        String path = awsS3Uploader.uploadFile(s3Dto);
+        //System.out.println(path);
         //String path = "abcd";
         //ResponseEntity<String> responseEntity = requestService.requestPdfKeywords(path);
 //        String xx = """

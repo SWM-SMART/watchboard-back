@@ -35,10 +35,10 @@ public class AudioFileController {
     private final MindmapService mindmapService;
 
     @PostMapping("/{documentID}/audio")
-    public ResponseEntity<?> uploadAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audioFile") MultipartFile audioFile, @RequestParam(value = "fileID", required = false) Long fileId, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
+    public ResponseEntity<?> uploadAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audioFile") MultipartFile audioFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
         // 토큰 검증
         // s3에 오디오 파일 저장
-        S3Dto s3Dto = new S3Dto(audioFile, documentId, fileId);
+        S3Dto s3Dto = new S3Dto(audioFile, documentId);
         String path = awsS3Uploader.uploadFile(s3Dto);
         // STT
         //String sttResult = sttService.getSTT(path);
@@ -63,8 +63,8 @@ public class AudioFileController {
     }
 
     @PutMapping("/{documentID}/audio")
-    public ResponseEntity<?> updateAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audioFile") MultipartFile audioFile, @RequestParam(value = "fileID", required = false) Long fileId, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
-        S3Dto s3Dto = new S3Dto(audioFile, documentId, fileId);
+    public ResponseEntity<?> updateAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audioFile") MultipartFile audioFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
+        S3Dto s3Dto = new S3Dto(audioFile, documentId);
         String path = awsS3Uploader.uploadFile(s3Dto);
 
         ResponseEntity<String> sttResponseEntity = sttService.getSTT(path);
