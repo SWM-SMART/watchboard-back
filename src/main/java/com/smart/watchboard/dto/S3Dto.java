@@ -11,11 +11,11 @@ import org.springframework.web.multipart.MultipartFile;
 public class S3Dto {
     private MultipartFile file;
     private Long documentId;
-    private Long fileId;
+    //private Long fileId;
 
-    public S3Dto(MultipartFile file, long documentId, Long fileId) {
+    public S3Dto(MultipartFile file, long documentId) {
         this.file = file;
         this.documentId = documentId;
-        this.fileId = fileId;
+        //this.fileId = fileId;
     }
 }
