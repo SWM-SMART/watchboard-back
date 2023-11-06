@@ -3,9 +3,9 @@ package com.smart.watchboard.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.smart.watchboard.repository.FileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -13,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
 import java.util.List;
 
 
@@ -21,13 +20,14 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class RequestService {
-    private final FileRepository fileRepository;
+    @Value("${ai-url}")
+    private String aiUrl;
+
     private final MindmapService mindmapService;
 
     public ResponseEntity<String> requestPdfKeywords(String filePath) {
         RestTemplate restTemplate = new RestTemplate();
-        //String url = "https:/{aiurl}/keywords";
-        String url = "http://echo.jsontest.com/key/value/one/two";
+        String url = aiUrl + "/keywords";
         // 요청 헤더 추가
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type", "application/json");
@@ -52,8 +52,7 @@ public class RequestService {
     // 수정필요
     public ResponseEntity<String> requestSTTKeywords(String text) {
         RestTemplate restTemplate = new RestTemplate();
-        //String url = "https:/{aiurl}/keywords";
-        String url = "http://echo.jsontest.com/key/value/one/two";
+        String url = aiUrl + "/keywords";
         // 요청 헤더 추가
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type", "application/json");
@@ -78,8 +77,8 @@ public class RequestService {
 
     public ResponseEntity<String> requestPdfSummary(String filePath) {
         RestTemplate restTemplate = new RestTemplate();
-        //String url = "https:/{aiurl}/mindmap";
-        String url = "http://echo.jsontest.com/key/value/one/two";
+        String url = aiUrl + "/summary";
+        //String url = "http://echo.jsontest.com/key/value/one/two";
         // 요청 헤더 추가
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type", "application/json");
@@ -103,8 +102,8 @@ public class RequestService {
 
     public String requestSTTSummary(String sttResult) throws JsonProcessingException {
         RestTemplate restTemplate = new RestTemplate();
-        //String url = "https:/{aiurl}/mindmap";
-        String url = "http://echo.jsontest.com/key/value/one/two";
+        String url = aiUrl + "/summary";
+        //String url = "http://echo.jsontest.com/key/value/one/two";
         // 요청 헤더 추가
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type", "application/json");
@@ -133,11 +132,10 @@ public class RequestService {
     }
 
 
-    public ResponseEntity<String> requestPdfMindmap(String filePath, Long documentId) throws JsonProcessingException {
-        List<String> keywords = new ArrayList<>();
+    public ResponseEntity<String> requestPdfMindmap(String filePath, Long documentId, List<String> keywords) throws JsonProcessingException {
         RestTemplate restTemplate = new RestTemplate();
-        //String url = "https:/{aiurl}/mindmap";
-        String url = "http://echo.jsontest.com/key/value/one/two";
+        String url = aiUrl + "/mindmap";
+        //String url = "http://echo.jsontest.com/key/value/one/two";
         // 요청 헤더 추가
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type", "application/json");
@@ -164,11 +162,10 @@ public class RequestService {
         return responseEntity;
     }
 
-    public ResponseEntity<String> requestSTTMindmap(String stt, Long documentId) throws JsonProcessingException {
-        List<String> keywords = new ArrayList<>();
+    public ResponseEntity<String> requestSTTMindmap(String stt, Long documentId, List<String> keywords) throws JsonProcessingException {
         RestTemplate restTemplate = new RestTemplate();
-        //String url = "https:/{aiurl}/mindmap";
-        String url = "http://echo.jsontest.com/key/value/one/two";
+        String url = aiUrl + "/mindmap";
+        //String url = "http://echo.jsontest.com/key/value/one/two";
         // 요청 헤더 추가
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type", "application/json");

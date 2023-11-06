@@ -22,4 +22,6 @@ public class LectureNote {
     private Long documentId;
 
     private List<SttData> data;
+
+    private String text;
 }
