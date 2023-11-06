@@ -46,7 +46,7 @@ public class AudioFileController {
         ResponseEntity<String> sttResponseEntity = sttService.getSTT(path);
         String sttResult = sttService.getText(sttResponseEntity);
         List<SttData> data = sttService.getSTTData(sttResponseEntity);
-        lectureNoteService.createLectureNote(documentId, data);
+        lectureNoteService.createLectureNote(documentId, data, sttResult);
         //noteService.createNote(documentId, sttResult);
 
         ResponseEntity<String> responseEntity = requestService.requestSTTKeywords(sttResult);
@@ -56,7 +56,7 @@ public class AudioFileController {
         summaryService.createSummary(documentId, summary);
 
         //String body = fileService.createResponseBody(responseEntity, sttResult);
-        SttDto body = fileService.createResponseBody(path, data);
+        SttDto body = fileService.createResponseBody(path, data); // 이 부분 수정하기, 업데이트 아래 메소드도 수정하기
 
         whiteboardService.setDataType(documentId, "audio");
 
@@ -72,6 +72,7 @@ public class AudioFileController {
         ResponseEntity<String> sttResponseEntity = sttService.getSTT(path);
         String sttResult = sttService.getText(sttResponseEntity);
         List<SttData> data = sttService.getSTTData(sttResponseEntity);
+        lectureNoteService.updateLectureNote(documentId, data, sttResult);
 
         //String sttResult = sttService.getSTT(path);
 //        noteService.updateNote(documentId, sttResult);
@@ -146,7 +147,7 @@ public class AudioFileController {
         ResponseEntity<String> response1 = new ResponseEntity<>(body, HttpStatus.OK);
         List<SttData> data = sttService.getSTTData(response1);
         System.out.println(data.get(0).getText());
-        lectureNoteService.createLectureNote(100L, data);
+        lectureNoteService.createLectureNote(100L, data, "aa");
         String path = "naver.com";
         SttDto body2 = fileService.createResponseBody(path, data);
         ResponseEntity<?> ss = new ResponseEntity<>(body2, HttpStatus.OK);

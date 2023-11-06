@@ -17,23 +17,24 @@ import java.util.List;
 @Slf4j
 public class LectureNoteService {
     private final LectureNoteRepository lectureNoteRepository;
-    private WhiteboardService whiteboardService;
 
-    public void createLectureNote(Long documentId, List<SttData> data) {
+    public void createLectureNote(Long documentId, List<SttData> data, String sttResult) {
         //Document document = whiteboardService.findDoc(documentId);
         LectureNote lectureNote = LectureNote.builder()
                 .documentId(documentId)
                 .data(data)
+                .text(sttResult)
                 .build();
 
         lectureNoteRepository.save(lectureNote);
     }
 
-    public void updateLectureNote(Long documentId, List<SttData> data) {
+    public void updateLectureNote(Long documentId, List<SttData> data, String sttResult) {
         //Document document = whiteboardService.findDoc(documentId);
         LectureNote lectureNote = LectureNote.builder()
                 .documentId(documentId)
                 .data(data)
+                .text(sttResult)
                 .build();
 
         lectureNoteRepository.save(lectureNote);
@@ -42,5 +43,10 @@ public class LectureNoteService {
     public List<SttData> getData(Long documentId) {
         LectureNote lectureNote = lectureNoteRepository.findByDocumentId(documentId);
         return lectureNote.getData();
+    }
+
+    public String getText(Long documentId) {
+        LectureNote lectureNote = lectureNoteRepository.findByDocumentId(documentId);
+        return lectureNote.getText();
     }
 }
