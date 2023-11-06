@@ -9,6 +9,7 @@ import com.smart.watchboard.dto.S3Dto;
 import com.smart.watchboard.service.FileService;
 import com.smart.watchboard.service.MindmapService;
 import com.smart.watchboard.service.RequestService;
+import com.smart.watchboard.service.WhiteboardService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,12 +32,14 @@ public class LearningFileController {
     private final AwsS3Uploader awsS3Uploader;
     private final FileService fileService;
     private final RequestService requestService;
+    private final WhiteboardService whiteboardService;
 
     @PostMapping("/{documentID}/pdf")
     public ResponseEntity<?> uploadLearningFile(@PathVariable(value = "documentID") long documentId, @RequestParam("pdf") MultipartFile pdfFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
         S3Dto s3Dto = new S3Dto(pdfFile, documentId);
         String path = awsS3Uploader.uploadFile(s3Dto);
         ResponseEntity<String> responseEntity = requestService.requestPdfKeywords(path);
+        whiteboardService.setDataType(documentId, "pdf");
 
         return new ResponseEntity<>(responseEntity.getBody(), HttpStatus.OK);
     }
@@ -46,6 +49,7 @@ public class LearningFileController {
         S3Dto s3Dto = new S3Dto(pdfFile, documentId);
         String path = awsS3Uploader.uploadFile(s3Dto);
         ResponseEntity<String> responseEntity = requestService.requestPdfKeywords(path);
+        whiteboardService.setDataType(documentId, "pdf");
 
         return new ResponseEntity<>("", HttpStatus.OK);
     }

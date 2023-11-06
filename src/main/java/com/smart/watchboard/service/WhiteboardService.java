@@ -150,6 +150,12 @@ public class WhiteboardService {
         return document;
     }
 
+    public void setDataType(Long documentId, String dataType) {
+        Document document = findDoc(documentId);
+        document.setDataType(dataType);
+        documentRepository.save(document);
+    }
+
 //    private DocumentCreatedResponseDto convertToDocumentCreatedResponseDto(Document document) {
 //        DocumentCreatedResponseDto dto = new DocumentCreatedResponseDto(document.getDocumentId(), document.getDocumentName(), document.getCreatedAt().toEpochMilli(), document.getModifiedAt().toEpochMilli());
 //        return dto;

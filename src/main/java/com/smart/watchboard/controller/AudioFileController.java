@@ -33,6 +33,7 @@ public class AudioFileController {
     private final SummaryService summaryService;
     private final FileService fileService;
     private final MindmapService mindmapService;
+    private final WhiteboardService whiteboardService;
 
     @PostMapping("/{documentID}/audio")
     public ResponseEntity<?> uploadAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audioFile") MultipartFile audioFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
@@ -48,7 +49,6 @@ public class AudioFileController {
         lectureNoteService.createLectureNote(documentId, data);
         //noteService.createNote(documentId, sttResult);
 
-        // STT 키워드 요청 마인드맵 요청 -> 마인드맵 생성
         ResponseEntity<String> responseEntity = requestService.requestSTTKeywords(sttResult);
 
         // 요약본 요청
@@ -57,6 +57,8 @@ public class AudioFileController {
 
         //String body = fileService.createResponseBody(responseEntity, sttResult);
         SttDto body = fileService.createResponseBody(path, data);
+
+        whiteboardService.setDataType(documentId, "audio");
 
         // 응답 키워드, stt
         return new ResponseEntity<>(body, HttpStatus.OK);
@@ -79,6 +81,7 @@ public class AudioFileController {
 //        summaryService.updateSummary(documentId, summary);
 //
 //        String body = fileService.createResponseBody(responseEntity, sttResult);
+        whiteboardService.setDataType(documentId, "audio");
 
         return new ResponseEntity<>("", HttpStatus.OK);
     }
