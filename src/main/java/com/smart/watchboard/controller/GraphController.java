@@ -1,11 +1,11 @@
 package com.smart.watchboard.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.smart.watchboard.common.support.AudioConcatenator;
 import com.smart.watchboard.common.support.AwsS3Uploader;
 import com.smart.watchboard.dto.KeywordsDto;
 import com.smart.watchboard.dto.MindmapDto;
-import com.smart.watchboard.service.FileService;
-import com.smart.watchboard.service.MindmapService;
+import com.smart.watchboard.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -19,25 +19,33 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.IOException;
+import java.util.List;
 
 @RestController
-@Tag(name = "그래프 API", description = "그래프 관련 API(mock)")
+@Tag(name = "그래프 API", description = "그래프 관련 API")
 @RequiredArgsConstructor
 @Slf4j
 public class GraphController {
     
-    private final AwsS3Uploader awsS3Uploader;
-    private final AudioConcatenator audioConcatenator;
+    private final LectureNoteService lectureNoteService;
     private final MindmapService mindmapService;
-    private final String aiServerUrl = "";
+    private final RequestService requestService;
+    private final FileService fileService;
+    private final WhiteboardService whiteboardService;
 
     @PostMapping("/graph/{documentID}")
-    @Operation(summary = "마인드맵 생성", description = "음성 데이터를 받아 ai 서버에 마인드맵 요청한다.")
-    public ResponseEntity<?> createMindmap(@PathVariable(value = "documentID") long documentId, @RequestParam("audioFile") MultipartFile audioFile, @RequestParam(value = "fileID", required = false) Long fileId, @RequestHeader("Authorization") String accessToken) {
-        //awsS3Uploader.uploadFile(audioFile, documentId, fileId);
-        //awsS3Uploader.deleteFile();
-
-        return new ResponseEntity<>("{\"root\":1,\"keywords\":[\"나는\",\"eat\",\"food\",\"today\"],\"graph\":{\"1\":[0,2],\"2\":[3]}}", HttpStatus.OK);
+    @Operation(summary = "마인드맵 생성", description = "ai 서버에 마인드맵 요청한다.")
+    public ResponseEntity<?> createMindmap(@PathVariable(value = "documentID") long documentId, @RequestBody List<String> keywords, @RequestHeader("Authorization") String accessToken) throws JsonProcessingException {
+        if (whiteboardService.isPdfType(documentId)) {
+            String path = fileService.getPdfUrl(documentId);
+            ResponseEntity<String> body = requestService.requestPdfMindmap(path, documentId, keywords);
+            return new ResponseEntity<>(body, HttpStatus.OK);
+        } else if (whiteboardService.isAudioType(documentId)) {
+            String text = lectureNoteService.getText(documentId);
+            ResponseEntity<String> body = requestService.requestSTTMindmap(text, documentId, keywords);
+            return new ResponseEntity<>(body, HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
     @GetMapping("/documents/{documentID}/mindmap")
@@ -57,9 +65,20 @@ public class GraphController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @PostMapping("/abc")
-    public ResponseEntity<?> test(@RequestParam("audioFile1") MultipartFile audioFile1, @RequestParam(value = "fileID", required = false) Long fileId, @RequestParam(value = "documentID") Long documentId) throws UnsupportedAudioFileException, IOException {
-        audioConcatenator.concatenateAudioFiles(audioFile1, documentId, fileId);
+    @PostMapping("/abc/{documentID}")
+    public ResponseEntity<?> test(@PathVariable(value = "documentID") long documentId) throws UnsupportedAudioFileException, IOException {
+        System.out.println(documentId);
+        if (whiteboardService.isPdfType(documentId)) {
+            String path = fileService.getPdfUrl(documentId);
+            System.out.println(path);
+            //ResponseEntity<String> body = requestService.requestPdfMindmap(path, documentId, keywords);
+            //return new ResponseEntity<>(body, HttpStatus.OK);
+        } else if (whiteboardService.isAudioType(documentId)) {
+            String text = lectureNoteService.getText(documentId);
+            System.out.println(text);
+            //ResponseEntity<String> body = requestService.requestSTTMindmap(text, documentId, keywords);
+            //return new ResponseEntity<>(body, HttpStatus.OK);
+        }
         return new ResponseEntity<>("", HttpStatus.OK);
     }
 }
