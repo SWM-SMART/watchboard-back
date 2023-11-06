@@ -26,7 +26,7 @@ public class STTService {
     @Value("${clova.stt.secret-key}")
     private String secretKey;
 
-    @Value("${clova.stt.invoke-url")
+    @Value("${clova.stt.invoke-url}")
     private String clovaInvokeURL;
 
     public ResponseEntity<String> getSTT(String path) throws JsonProcessingException {
