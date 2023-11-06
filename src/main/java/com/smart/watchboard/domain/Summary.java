@@ -18,7 +18,8 @@ public class Summary {
     @Column(name = "summary_id")
     private Long id;
 
-    @Column(length = 16000)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String content;
 
     //private Long size;

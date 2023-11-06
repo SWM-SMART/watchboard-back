@@ -3,6 +3,7 @@ package com.smart.watchboard.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.smart.watchboard.domain.Summary;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +25,7 @@ public class RequestService {
     private String aiUrl;
 
     private final MindmapService mindmapService;
+    private final SummaryService summaryService;
 
     public ResponseEntity<String> requestPdfKeywords(String filePath) {
         RestTemplate restTemplate = new RestTemplate();
@@ -191,5 +193,24 @@ public class RequestService {
         return responseEntity;
     }
 
+    public ResponseEntity<String> requestAnswer(Long documentId, String keywordLabel) throws JsonProcessingException {
+        Summary summary = summaryService.findSummary(documentId);
+        RestTemplate restTemplate = new RestTemplate();
+        String url = aiUrl + "/question";
 
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Content-Type", "application/json");
+
+        String requestBody = """
+                {
+                  "summary": %s,
+                  "text": %s
+                }
+                """.formatted(summary.getContent(), keywordLabel);
+        HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
+
+        ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
+
+        return responseEntity;
+    }
 }

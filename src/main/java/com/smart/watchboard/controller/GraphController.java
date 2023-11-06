@@ -1,8 +1,6 @@
 package com.smart.watchboard.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.smart.watchboard.common.support.AudioConcatenator;
-import com.smart.watchboard.common.support.AwsS3Uploader;
 import com.smart.watchboard.dto.KeywordsDto;
 import com.smart.watchboard.dto.MindmapDto;
 import com.smart.watchboard.service.*;
@@ -13,10 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.multipart.MultipartFile;
 
-import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.IOException;
 import java.util.List;
@@ -63,6 +58,14 @@ public class GraphController {
         mindmapService.updateKeywords(keywordsDto, documentId);
 
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @GetMapping("/documents/{documentID}/mindmap/keyword/{keywordLabel}")
+    @Operation(summary = "키워드 질문", description = "키워드 AI에 질문")
+    public ResponseEntity<?> getAnswer(@PathVariable(value = "documentID") long documentId, @PathVariable String keywordLabel, @RequestHeader("Authorization") String accessToken) throws JsonProcessingException {
+        ResponseEntity<String> responseEntity = mindmapService.getKeywordAnswer(documentId, keywordLabel);
+
+        return new ResponseEntity<>(responseEntity, HttpStatus.OK);
     }
 
     @PostMapping("/abc/{documentID}")

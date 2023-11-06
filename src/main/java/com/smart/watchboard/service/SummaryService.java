@@ -46,4 +46,11 @@ public class SummaryService {
         summaryRepository.delete(summary);
     }
 
+    public Summary findSummary(Long documentId) {
+        Document document = whiteboardService.findDoc(documentId);
+        Summary summary = summaryRepository.findByDocument(document);
+
+        return summary;
+    }
+
 }
