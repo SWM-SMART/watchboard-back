@@ -31,8 +31,8 @@ public class User {
 
     private String socialId;
 
-    @OneToMany(mappedBy = "user")
-    private List<UserDocument> userDocuments = new ArrayList<>();
+//    @OneToMany(mappedBy = "user")
+//    private List<UserDocument> userDocuments = new ArrayList<>();
 
     public void authorizeUser() {
         this.role = Role.USER;
