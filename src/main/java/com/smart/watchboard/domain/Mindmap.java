@@ -29,8 +29,6 @@ public class Mindmap {
 
     private Instant modifiedAt;
 
-    private String dataType;
-
     private int root;
 
     private List<String> keywords;

@@ -33,12 +33,13 @@ public class AudioFileController {
     private final SummaryService summaryService;
     private final FileService fileService;
     private final MindmapService mindmapService;
+    private final WhiteboardService whiteboardService;
 
     @PostMapping("/{documentID}/audio")
-    public ResponseEntity<?> uploadAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audioFile") MultipartFile audioFile, @RequestParam(value = "fileID", required = false) Long fileId, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
+    public ResponseEntity<?> uploadAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audioFile") MultipartFile audioFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
         // 토큰 검증
         // s3에 오디오 파일 저장
-        S3Dto s3Dto = new S3Dto(audioFile, documentId, fileId);
+        S3Dto s3Dto = new S3Dto(audioFile, documentId);
         String path = awsS3Uploader.uploadFile(s3Dto);
         // STT
         //String sttResult = sttService.getSTT(path);
@@ -48,7 +49,6 @@ public class AudioFileController {
         lectureNoteService.createLectureNote(documentId, data);
         //noteService.createNote(documentId, sttResult);
 
-        // STT 키워드 요청 마인드맵 요청 -> 마인드맵 생성
         ResponseEntity<String> responseEntity = requestService.requestSTTKeywords(sttResult);
 
         // 요약본 요청
@@ -58,13 +58,15 @@ public class AudioFileController {
         //String body = fileService.createResponseBody(responseEntity, sttResult);
         SttDto body = fileService.createResponseBody(path, data);
 
+        whiteboardService.setDataType(documentId, "audio");
+
         // 응답 키워드, stt
         return new ResponseEntity<>(body, HttpStatus.OK);
     }
 
     @PutMapping("/{documentID}/audio")
-    public ResponseEntity<?> updateAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audioFile") MultipartFile audioFile, @RequestParam(value = "fileID", required = false) Long fileId, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
-        S3Dto s3Dto = new S3Dto(audioFile, documentId, fileId);
+    public ResponseEntity<?> updateAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audioFile") MultipartFile audioFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
+        S3Dto s3Dto = new S3Dto(audioFile, documentId);
         String path = awsS3Uploader.uploadFile(s3Dto);
 
         ResponseEntity<String> sttResponseEntity = sttService.getSTT(path);
@@ -79,6 +81,7 @@ public class AudioFileController {
 //        summaryService.updateSummary(documentId, summary);
 //
 //        String body = fileService.createResponseBody(responseEntity, sttResult);
+        whiteboardService.setDataType(documentId, "audio");
 
         return new ResponseEntity<>("", HttpStatus.OK);
     }

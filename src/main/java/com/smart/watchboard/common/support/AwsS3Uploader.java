@@ -3,6 +3,7 @@ package com.smart.watchboard.common.support;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.*;
+import com.smart.watchboard.domain.File;
 import com.smart.watchboard.dto.FileDto;
 import com.smart.watchboard.dto.S3Dto;
 import com.smart.watchboard.service.FileService;
@@ -15,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Optional;
 
 
 @Service
@@ -42,11 +44,11 @@ public class AwsS3Uploader {
                     .withCannedAcl(CannedAccessControlList.PublicRead));
 
             String path = amazonS3Client.getResourceUrl(bucket, fileName);
-            System.out.println(s3Dto.getFile().getContentType());
-            FileDto fileDto = new FileDto(s3Dto.getFile(), path, s3Dto.getFile().getContentType(), s3Dto.getDocumentId(), s3Dto.getFileId());
-            if (s3Dto.getFileId() == null) {
+            FileDto fileDto = new FileDto(s3Dto.getFile(), path, s3Dto.getFile().getContentType(), s3Dto.getDocumentId());
+            File file = fileService.findFileByDocument(s3Dto.getDocumentId());
+            if (file == null) {
                 fileService.createFile(fileDto);
-            } else if (s3Dto.getFileId() != null) {
+            } else if (file != null) {
                 fileService.updateFile(fileDto);
             }
         } catch (IOException e) {

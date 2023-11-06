@@ -28,7 +28,7 @@ public class MindmapService {
     private final MindmapRepository mindmapRepository;
     private final WhiteboardService whiteboardService;
 
-    public void createMindmap(ResponseEntity<String> responseEntity, Long documentId, String dataType) throws JsonProcessingException {
+    public void createMindmap(ResponseEntity<String> responseEntity, Long documentId) throws JsonProcessingException {
         Document document = whiteboardService.findDoc(documentId);
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -44,7 +44,6 @@ public class MindmapService {
                 .documentName(document.getDocumentName())
                 .createdAt(Instant.now())
                 .modifiedAt(Instant.now())
-                .dataType(dataType)
                 .root(root)
                 .keywords(keywords)
                 .graph(graphMap)

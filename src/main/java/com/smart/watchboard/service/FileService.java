@@ -50,8 +50,10 @@ public class FileService {
     }
 
     public void updateFile(FileDto fileDto) {
-        Optional<File> file = findFile(fileDto.getFileId());
-        File updatedFile = file.get();
+        Document document = whiteboardService.findDoc(fileDto.getDocumentId());
+        File updatedFile = fileRepository.findByDocument(document);
+        //Optional<File> file = findFile(fileDto.getFileId());
+        //File updatedFile = file.get();
         updatedFile.setFileName(fileDto.getFile().getOriginalFilename());
         updatedFile.setPath(fileDto.getPath());
         updatedFile.setSize(fileDto.getFile().getSize());
@@ -69,6 +71,13 @@ public class FileService {
 
     public Optional<File> findFile(long fileId) {
         Optional<File> file = fileRepository.findById(fileId);
+
+        return file;
+    }
+
+    public File findFileByDocument(Long documentId) {
+        Document document = whiteboardService.findDoc(documentId);
+        File file = fileRepository.findByDocument(document);
 
         return file;
     }

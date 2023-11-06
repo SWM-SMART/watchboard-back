@@ -159,7 +159,7 @@ public class RequestService {
         ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
 
         // 마인드맵 mongoDB에 저장
-        mindmapService.createMindmap(responseEntity, documentId, "pdf");
+        mindmapService.createMindmap(responseEntity, documentId);
 
         return responseEntity;
     }
@@ -189,7 +189,7 @@ public class RequestService {
         // 요청 보내기
         ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
 
-        mindmapService.createMindmap(responseEntity, documentId, "audio");
+        mindmapService.createMindmap(responseEntity, documentId);
 
         return responseEntity;
     }

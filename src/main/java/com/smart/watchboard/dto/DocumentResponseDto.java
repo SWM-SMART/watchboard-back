@@ -14,7 +14,8 @@ public class DocumentResponseDto {
     private String documentName;
     private long createdAt;
     private long modifiedAt;
-    private Map<String, DocumentObjectDto> documentData;
+    private String dataType;
+    //private Map<String, DocumentObjectDto> documentData;
 
     // DocumentData는 map key: value, id : object
 }

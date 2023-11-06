@@ -22,23 +22,31 @@ public class Document {
 
     private String documentName;
 
-    private Instant createdAt;
+    private Long createdAt;
 
-    private Instant modifiedAt;
+    private Long modifiedAt;
 
     private boolean isDeleted;
 
-    @OneToMany(mappedBy = "document")
-    private List<UserDocument> userDocuments = new ArrayList<>();
+    private String dataType;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+//    @OneToMany(mappedBy = "document")
+//    private List<UserDocument> userDocuments = new ArrayList<>();
 
     @OneToOne(mappedBy = "document", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private File file;
 
-    public Document(String documentName, Instant createdAt, Instant modifiedAt, boolean isDeleted) {
+    public Document(String documentName, Long createdAt, Long modifiedAt, boolean isDeleted, String dataType, User user) {
         this.documentName = documentName;
         this.createdAt = createdAt;
         this.modifiedAt = modifiedAt;
         this.isDeleted = isDeleted;
+        this.dataType = dataType;
+        this.user = user;
     }
 
     @Override

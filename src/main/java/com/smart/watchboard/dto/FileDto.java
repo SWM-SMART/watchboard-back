@@ -11,13 +11,13 @@ public class FileDto {
     private String path;
     private String fileType;
     private Long documentId;
-    private Long fileId;
+    //private Long fileId;
 
-    public FileDto(MultipartFile multipartFile, String path, String fileType, Long documentId, Long fileId) {
+    public FileDto(MultipartFile multipartFile, String path, String fileType, Long documentId) {
         this.file = multipartFile;
         this.path = path;
         this.fileType = fileType;
         this.documentId = documentId;
-        this.fileId = fileId;
+        //this.fileId = fileId;
     }
 }
