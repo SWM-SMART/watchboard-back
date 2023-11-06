@@ -27,6 +27,7 @@ public class MindmapService {
 
     private final MindmapRepository mindmapRepository;
     private final WhiteboardService whiteboardService;
+    private final RequestService requestService;
 
     public void createMindmap(ResponseEntity<String> responseEntity, Long documentId) throws JsonProcessingException {
         Document document = whiteboardService.findDoc(documentId);
@@ -77,5 +78,9 @@ public class MindmapService {
         updatedMindmap.setKeywords(newKeywords);
 
         mindmapRepository.save(updatedMindmap);
+    }
+
+    public ResponseEntity<String> getKeywordAnswer(Long documentId, String keywordLabel) throws JsonProcessingException {
+        return requestService.requestAnswer(documentId, keywordLabel);
     }
 }
