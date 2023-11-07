@@ -109,7 +109,7 @@ public class AudioFileController {
     }
 
     @PostMapping("/testffff")
-    public ResponseEntity<?> test(@RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
+    public ResponseEntity<?> test(@RequestParam("audioFile") MultipartFile audioFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
         String body = """
                 {
                     "segments":[
@@ -144,14 +144,20 @@ public class AudioFileController {
                     ]
                 }
                 """;
-        ResponseEntity<String> response1 = new ResponseEntity<>(body, HttpStatus.OK);
-        List<SttData> data = sttService.getSTTData(response1);
-        System.out.println(data.get(0).getText());
-        lectureNoteService.createLectureNote(100L, data, "aa");
-        String path = "naver.com";
-        SttDto body2 = fileService.createResponseBody(path, data);
-        ResponseEntity<?> ss = new ResponseEntity<>(body2, HttpStatus.OK);
-        return ss;
+//        ResponseEntity<String> response1 = new ResponseEntity<>(body, HttpStatus.OK);
+//        List<SttData> data = sttService.getSTTData(response1);
+//        System.out.println(data.get(0).getText());
+//        lectureNoteService.createLectureNote(100L, data, "aa");
+//        String path = "naver.com";
+//        SttDto body2 = fileService.createResponseBody(path, data);
+//        ResponseEntity<?> ss = new ResponseEntity<>(body2, HttpStatus.OK);
+//        return ss;
+        S3Dto s3Dto = new S3Dto(audioFile, 26L);
+        String path = awsS3Uploader.uploadFile(s3Dto);
+        int startIndex = path.indexOf("application/pdf/") + "application/pdf/".length();
+        String extractedString = path.substring(startIndex);
+        System.out.println(extractedString);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
 }
