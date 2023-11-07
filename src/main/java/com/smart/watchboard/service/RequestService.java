@@ -28,6 +28,9 @@ public class RequestService {
     private final SummaryService summaryService;
 
     public ResponseEntity<String> requestPdfKeywords(String filePath) {
+        int startIndex = filePath.indexOf("application/pdf/") + "application/pdf/".length();
+        String fileName = filePath.substring(startIndex);
+
         RestTemplate restTemplate = new RestTemplate();
         String url = aiUrl + "/keywords";
         // 요청 헤더 추가
@@ -42,7 +45,7 @@ public class RequestService {
                     "db": "s3"
                   }
                 }
-                """.formatted(filePath);
+                """.formatted(fileName);
         HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
 
         // 요청 보내기
@@ -77,7 +80,10 @@ public class RequestService {
         return responseEntity;
     }
 
-    public ResponseEntity<String> requestPdfSummary(String filePath) {
+    public String requestPdfSummary(String filePath) throws JsonProcessingException {
+        int startIndex = filePath.indexOf("application/pdf/") + "application/pdf/".length();
+        String fileName = filePath.substring(startIndex);
+
         RestTemplate restTemplate = new RestTemplate();
         String url = aiUrl + "/summary";
         //String url = "http://echo.jsontest.com/key/value/one/two";
@@ -93,13 +99,17 @@ public class RequestService {
                     "db": "s3"
                   }
                 }
-                """.formatted(filePath);
+                """.formatted(fileName);
         HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
 
         // 요청 보내기
         ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
         //ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
-        return responseEntity;
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode = objectMapper.readTree(responseEntity.getBody());
+        String text = jsonNode.get("summary").asText();
+
+        return text;
     }
 
     public String requestSTTSummary(String sttResult) throws JsonProcessingException {
