@@ -1,6 +1,7 @@
 package com.smart.watchboard.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.smart.watchboard.dto.KeywordsBodyDto;
 import com.smart.watchboard.dto.KeywordsDto;
 import com.smart.watchboard.dto.MindmapDto;
 import com.smart.watchboard.service.*;
@@ -9,8 +10,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.IOException;
@@ -27,20 +30,22 @@ public class GraphController {
     private final RequestService requestService;
     private final FileService fileService;
     private final WhiteboardService whiteboardService;
+    private final SseService sseService;
 
     @PostMapping("/graph/{documentID}")
     @Operation(summary = "마인드맵 생성", description = "ai 서버에 마인드맵 요청한다.")
-    public ResponseEntity<?> createMindmap(@PathVariable(value = "documentID") long documentId, @RequestBody List<String> keywords, @RequestHeader("Authorization") String accessToken) throws JsonProcessingException {
-        if (whiteboardService.isPdfType(documentId)) {
-            String path = fileService.getPdfUrl(documentId);
-            ResponseEntity<String> body = requestService.requestPdfMindmap(path, documentId, keywords);
-            return new ResponseEntity<>(body, HttpStatus.OK);
-        } else if (whiteboardService.isAudioType(documentId)) {
-            String text = lectureNoteService.getText(documentId);
-            ResponseEntity<String> body = requestService.requestSTTMindmap(text, documentId, keywords);
-            return new ResponseEntity<>(body, HttpStatus.OK);
-        }
-        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    public void createMindmap(@PathVariable(value = "documentID") long documentId, @RequestBody KeywordsBodyDto keywordsBodyDto, @RequestHeader("Authorization") String accessToken) throws JsonProcessingException {
+        sseService.notify(documentId, keywordsBodyDto.getKeywords());
+//        if (whiteboardService.isPdfType(documentId)) {
+//            String path = fileService.getPdfUrl(documentId);
+//            ResponseEntity<String> body = requestService.requestPdfMindmap(path, documentId, keywords);
+//            return new ResponseEntity<>(body, HttpStatus.OK);
+//        } else if (whiteboardService.isAudioType(documentId)) {
+//            String text = lectureNoteService.getText(documentId);
+//            ResponseEntity<String> body = requestService.requestSTTMindmap(text, documentId, keywords);
+//            return new ResponseEntity<>(body, HttpStatus.OK);
+//        }
+//        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
     @GetMapping("/documents/{documentID}/mindmap")
@@ -66,6 +71,16 @@ public class GraphController {
         ResponseEntity<String> responseEntity = requestService.requestAnswer(documentId, keywordLabel);
 
         return new ResponseEntity<>(responseEntity, HttpStatus.OK);
+    }
+
+    @GetMapping(value = "/subscribe/{documentID}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter subscribe(@PathVariable(value = "documentID") long documentId) {
+        return sseService.subscribe(documentId);
+    }
+
+    @PostMapping("/send-data/{documentID}")
+    public void sendData(@PathVariable(value = "documentID") long documentId, @RequestBody KeywordsBodyDto keywordsBodyDto) {
+        sseService.notify(documentId, keywordsBodyDto.getKeywords());
     }
 
     @PostMapping("/abc/{documentID}")
