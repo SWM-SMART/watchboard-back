@@ -31,12 +31,15 @@ public class LearningFileController {
     private final RequestService requestService;
     private final WhiteboardService whiteboardService;
     private final SummaryService summaryService;
+    private final KeywordService keywordService;
 
     @PostMapping("/{documentID}/pdf")
     public ResponseEntity<?> uploadLearningFile(@PathVariable(value = "documentID") long documentId, @RequestParam("pdf") MultipartFile pdfFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
         S3Dto s3Dto = new S3Dto(pdfFile, documentId);
         String path = awsS3Uploader.uploadFile(s3Dto);
         ResponseEntity<String> responseEntity = requestService.requestPdfKeywords(path);
+        keywordService.createKeywords(responseEntity, documentId);
+
         String summary = requestService.requestPdfSummary(path);
         summaryService.createSummary(documentId, summary);
         whiteboardService.setDataType(documentId, "pdf");
@@ -49,9 +52,13 @@ public class LearningFileController {
         S3Dto s3Dto = new S3Dto(pdfFile, documentId);
         String path = awsS3Uploader.uploadFile(s3Dto);
         ResponseEntity<String> responseEntity = requestService.requestPdfKeywords(path);
+        keywordService.renewKeywords(responseEntity, documentId);
+
+        String summary = requestService.requestPdfSummary(path);
+        summaryService.updateSummary(documentId, summary);
         whiteboardService.setDataType(documentId, "pdf");
 
-        return new ResponseEntity<>("", HttpStatus.OK);
+        return new ResponseEntity<>(responseEntity.getBody(), HttpStatus.OK);
     }
 
     @DeleteMapping("/{documentID}/pdf")

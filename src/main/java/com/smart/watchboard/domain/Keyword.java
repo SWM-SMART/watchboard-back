@@ -8,30 +8,18 @@ import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 
 @AllArgsConstructor
 @Getter
 @Setter
 @Builder
-@Document("mindmap")
-public class Mindmap {
+@Document("keyword")
+public class Keyword {
     @Id
     private ObjectId objectId;
 
     private Long documentId;
 
-    private String documentName;
-
-    private Instant createdAt;
-
-    private Instant modifiedAt;
-
-    private int root;
-
-    //private List<String> keywords;
-
-    private Map<String, List<Integer>> graph;
+    private List<String> keywords;
 }

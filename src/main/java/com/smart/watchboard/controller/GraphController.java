@@ -31,6 +31,7 @@ public class GraphController {
     private final FileService fileService;
     private final WhiteboardService whiteboardService;
     private final SseService sseService;
+    private final KeywordService keywordService;
 
     @PostMapping("/graph/{documentID}")
     @Operation(summary = "마인드맵 생성", description = "ai 서버에 마인드맵 요청한다.")
@@ -60,7 +61,7 @@ public class GraphController {
     @PutMapping("/documents/{documentID}/mindmap/keyword")
     @Operation(summary = "키워드 업데이트", description = "키워드 추가 및 삭제")
     public ResponseEntity<?> updateKeywords(@PathVariable(value = "documentID") long documentId, @RequestHeader("Authorization") String accessToken, @RequestBody KeywordsDto keywordsDto) {
-        mindmapService.updateKeywords(keywordsDto, documentId);
+        keywordService.updateKeywords(keywordsDto, documentId);
 
         return new ResponseEntity<>(HttpStatus.OK);
     }
