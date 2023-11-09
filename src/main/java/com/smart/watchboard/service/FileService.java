@@ -52,13 +52,17 @@ public class FileService {
     public void updateFile(FileDto fileDto) {
         Document document = whiteboardService.findDoc(fileDto.getDocumentId());
         File updatedFile = fileRepository.findByDocument(document);
+        String key = fileDto.getFileType() + "/" + fileDto.getDocumentId() + "." + fileDto.getFile().getOriginalFilename();
         //Optional<File> file = findFile(fileDto.getFileId());
         //File updatedFile = file.get();
         updatedFile.setFileName(fileDto.getFile().getOriginalFilename());
+        updatedFile.setObjectKey(key);
         updatedFile.setPath(fileDto.getPath());
+        updatedFile.setFileType(fileDto.getFileType());
         updatedFile.setSize(fileDto.getFile().getSize());
         updatedFile.setCreatedAt(Instant.now());
         updatedFile.setModifiedAt(Instant.now());
+        updatedFile.setDocument(document);
         fileRepository.save(updatedFile);
     }
 
