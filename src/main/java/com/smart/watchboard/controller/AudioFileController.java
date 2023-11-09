@@ -2,10 +2,11 @@ package com.smart.watchboard.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.smart.watchboard.common.support.AwsS3Uploader;
-import com.smart.watchboard.domain.File;
 import com.smart.watchboard.domain.SttData;
+import com.smart.watchboard.dto.KeywordsDto;
 import com.smart.watchboard.dto.S3Dto;
 import com.smart.watchboard.dto.SttDto;
+import com.smart.watchboard.dto.UploadDto;
 import com.smart.watchboard.service.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -34,6 +36,7 @@ public class AudioFileController {
     private final FileService fileService;
     private final MindmapService mindmapService;
     private final WhiteboardService whiteboardService;
+    private final KeywordService keywordService;
 
     @PostMapping("/{documentID}/audio")
     public ResponseEntity<?> uploadAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audioFile") MultipartFile audioFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
@@ -50,18 +53,19 @@ public class AudioFileController {
         //noteService.createNote(documentId, sttResult);
 
         ResponseEntity<String> responseEntity = requestService.requestSTTKeywords(sttResult);
+        List<String> keywords = keywordService.createKeywords(responseEntity, documentId);
 
         // 요약본 요청
         String summary = requestService.requestSTTSummary(sttResult);
         summaryService.createSummary(documentId, summary);
 
         //String body = fileService.createResponseBody(responseEntity, sttResult);
-        SttDto body = fileService.createResponseBody(path, data); // 이 부분 수정하기, 업데이트 아래 메소드도 수정하기
+        UploadDto uploadDto = new UploadDto(keywords, data);
 
         whiteboardService.setDataType(documentId, "audio");
 
         // 응답 키워드, stt
-        return new ResponseEntity<>(body, HttpStatus.OK);
+        return new ResponseEntity<>(uploadDto, HttpStatus.OK);
     }
 
     @PutMapping("/{documentID}/audio")
@@ -74,17 +78,17 @@ public class AudioFileController {
         List<SttData> data = sttService.getSTTData(sttResponseEntity);
         lectureNoteService.updateLectureNote(documentId, data, sttResult);
 
-        //String sttResult = sttService.getSTT(path);
-//        noteService.updateNote(documentId, sttResult);
-//
-//        ResponseEntity<String> responseEntity = requestService.requestSTTKeywords(sttResult);
-//        String summary = requestService.requestSTTSummary(sttResult);
-//        summaryService.updateSummary(documentId, summary);
-//
-//        String body = fileService.createResponseBody(responseEntity, sttResult);
+        ResponseEntity<String> responseEntity = requestService.requestSTTKeywords(sttResult);
+        List<String> keywords = keywordService.renewKeywords(responseEntity, documentId); // update
+
+        // 요약본 요청
+        String summary = requestService.requestSTTSummary(sttResult);
+        summaryService.updateSummary(documentId, summary); // update
+        UploadDto uploadDto = new UploadDto(keywords, data);
+
         whiteboardService.setDataType(documentId, "audio");
 
-        return new ResponseEntity<>("", HttpStatus.OK);
+        return new ResponseEntity<>(uploadDto, HttpStatus.OK);
     }
 
     @DeleteMapping("/{documentID}/audio")
@@ -109,54 +113,22 @@ public class AudioFileController {
     }
 
     @PostMapping("/testffff")
-    public ResponseEntity<?> test(@RequestParam("audioFile") MultipartFile audioFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
+    public ResponseEntity<?> test(@RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
         String body = """
-                {
-                    "segments":[
-                        {
-                            "start":0,
-                            "end":7827,
-                            "text":"알겠습니다. 나지 할게 나는 뭐 바꿨냐면 어제는 api 요청 방식 수정을",
-                            "confidence":0.8284265,
-                            "diarization":{
-                            "label":"1"
-                            },
-                            "speaker":{},
-                            "words":[],
-                            "textEdited":"알겠습니다. 나지 할게 나는 뭐 바꿨냐면 어제는 api 요청 방식 수정을"
-                        },
-                        {
-                            "start":7827,
-                            "end":12412,
-                            "text":"이게 뭔 얘기냐면 아까 얘기했듯이",
-                            "confidence":0.92000407,
-                            "diarization":{
-                                "label":"2"
-                            },
-                            "speaker":{
-                                "label":"2",
-                                "name":"B",
-                                "edited":false
-                            },
-                            "words":[],
-                            "textEdited":"이게 뭔 얘기냐면 아까 얘기했듯이"
-                        }
-                    ]
-                }
+                {"keywords":["eatssss","food","today"]}
                 """;
-//        ResponseEntity<String> response1 = new ResponseEntity<>(body, HttpStatus.OK);
-//        List<SttData> data = sttService.getSTTData(response1);
-//        System.out.println(data.get(0).getText());
-//        lectureNoteService.createLectureNote(100L, data, "aa");
-//        String path = "naver.com";
-//        SttDto body2 = fileService.createResponseBody(path, data);
-//        ResponseEntity<?> ss = new ResponseEntity<>(body2, HttpStatus.OK);
-//        return ss;
-        S3Dto s3Dto = new S3Dto(audioFile, 26L);
-        String path = awsS3Uploader.uploadFile(s3Dto);
-        int startIndex = path.indexOf("application/pdf/") + "application/pdf/".length();
-        String extractedString = path.substring(startIndex);
-        System.out.println(extractedString);
+        //ResponseEntity<String> ss = new ResponseEntity<>(body, HttpStatus.OK);
+        List<String> add = new ArrayList<>();
+        add.add("awwwww");
+        List<String> delete = new ArrayList<>();
+        delete.add("eat");
+        KeywordsDto keywordsDto = new KeywordsDto(add, delete);
+        keywordService.updateKeywords(keywordsDto, 26L);
+//        S3Dto s3Dto = new S3Dto(audioFile, 26L);
+//        String path = awsS3Uploader.uploadFile(s3Dto);
+//        int startIndex = path.indexOf("application/pdf/") + "application/pdf/".length();
+//        String extractedString = path.substring(startIndex);
+//        System.out.println(extractedString);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
