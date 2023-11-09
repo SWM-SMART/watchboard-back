@@ -31,7 +31,7 @@ public class Mindmap {
 
     private int root;
 
-    private List<String> keywords;
+    //private List<String> keywords;
 
     private Map<String, List<Integer>> graph;
 }
