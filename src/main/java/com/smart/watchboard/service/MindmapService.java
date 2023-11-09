@@ -27,7 +27,6 @@ public class MindmapService {
 
     private final MindmapRepository mindmapRepository;
     private final WhiteboardService whiteboardService;
-    //private final RequestService requestService;
 
     public void createMindmap(ResponseEntity<String> responseEntity, Long documentId) throws JsonProcessingException {
         Document document = whiteboardService.findDoc(documentId);
@@ -40,22 +39,34 @@ public class MindmapService {
         JsonNode graphNode = jsonNode.get("graph");
         Map<String, List<Integer>> graphMap = objectMapper.convertValue(graphNode, new TypeReference<Map<String, List<Integer>>>() {});
 
-        Mindmap mindmap = Mindmap.builder()
-                .documentId(documentId)
-                .documentName(document.getDocumentName())
-                .createdAt(Instant.now())
-                .modifiedAt(Instant.now())
-                .root(root)
-                .keywords(keywords)
-                .graph(graphMap)
-                .build();
-
-        mindmapRepository.save(mindmap);
+        Optional<Mindmap> formerMindmap = mindmapRepository.findByDocumentId(documentId);
+        if (formerMindmap.isPresent()) {
+            Mindmap mindmap = Mindmap.builder()
+                    .objectId(formerMindmap.get().getObjectId())
+                    .documentId(documentId)
+                    .documentName(document.getDocumentName())
+                    .createdAt(formerMindmap.get().getCreatedAt())
+                    .modifiedAt(Instant.now())
+                    .root(root)
+                    .graph(graphMap)
+                    .build();
+            mindmapRepository.save(mindmap);
+        } else if (!formerMindmap.isPresent()) {
+            Mindmap mindmap = Mindmap.builder()
+                    .documentId(documentId)
+                    .documentName(document.getDocumentName())
+                    .createdAt(Instant.now())
+                    .modifiedAt(Instant.now())
+                    .root(root)
+                    .graph(graphMap)
+                    .build();
+            mindmapRepository.save(mindmap);
+        }
     }
 
     public MindmapDto getMindmap(Long documentId) {
         Optional<Mindmap> mindmap = mindmapRepository.findByDocumentId(documentId);
-        MindmapDto mindmapDto = new MindmapDto(mindmap.get().getRoot(), mindmap.get().getKeywords(), mindmap.get().getGraph());
+        MindmapDto mindmapDto = new MindmapDto(mindmap.get().getRoot(), mindmap.get().getGraph());
 
         return mindmapDto;
     }
@@ -64,21 +75,21 @@ public class MindmapService {
         mindmapRepository.deleteByDocumentId(documentId);
     }
 
-    public void updateKeywords(KeywordsDto keywordsDto, Long documentId) {
-        Optional<Mindmap> mindmap = mindmapRepository.findByDocumentId(documentId);
-        List<String> keywords = mindmap.get().getKeywords();
-        List<String> addKeywords = keywordsDto.getAdd();
-        List<String> deleteKeywords = keywordsDto.getDelete();
-
-        List<String> newKeywords = new ArrayList<>(keywords);
-        newKeywords.removeAll(deleteKeywords);
-        newKeywords.addAll(addKeywords);
-
-        Mindmap updatedMindmap = mindmap.orElse(null);
-        updatedMindmap.setKeywords(newKeywords);
-
-        mindmapRepository.save(updatedMindmap);
-    }
+//    public void updateKeywords(KeywordsDto keywordsDto, Long documentId) {
+//        Optional<Mindmap> mindmap = mindmapRepository.findByDocumentId(documentId);
+//        List<String> keywords = mindmap.get().getKeywords();
+//        List<String> addKeywords = keywordsDto.getAdd();
+//        List<String> deleteKeywords = keywordsDto.getDelete();
+//
+//        List<String> newKeywords = new ArrayList<>(keywords);
+//        newKeywords.removeAll(deleteKeywords);
+//        newKeywords.addAll(addKeywords);
+//
+//        Mindmap updatedMindmap = mindmap.orElse(null);
+//        updatedMindmap.setKeywords(newKeywords);
+//
+//        mindmapRepository.save(updatedMindmap);
+//    }
 
 //    public ResponseEntity<String> getKeywordAnswer(Long documentId, String keywordLabel) throws JsonProcessingException {
 //        return requestService.requestAnswer(documentId, keywordLabel);
