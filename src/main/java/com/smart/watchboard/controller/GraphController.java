@@ -74,7 +74,7 @@ public class GraphController {
         return new ResponseEntity<>(responseEntity, HttpStatus.OK);
     }
 
-    @GetMapping(value = "/subscribe/{documentID}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @GetMapping(value = "documents/{documentID}/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribe(@PathVariable(value = "documentID") long documentId) {
         return sseService.subscribe(documentId);
     }
