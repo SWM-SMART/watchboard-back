@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smart.watchboard.domain.Document;
 import com.smart.watchboard.domain.Keyword;
 import com.smart.watchboard.domain.Mindmap;
+import com.smart.watchboard.dto.KeywordsBodyDto;
 import com.smart.watchboard.dto.KeywordsDto;
 import com.smart.watchboard.repository.KeywordRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,12 +27,12 @@ public class KeywordService {
     private final WhiteboardService whiteboardService;
     private final KeywordRepository keywordRepository;
 
-    public List<String> createKeywords(ResponseEntity<String> responseEntity, Long documentId) throws JsonProcessingException {
+    public List<String> createKeywords(ResponseEntity<KeywordsBodyDto> responseEntity, Long documentId) throws JsonProcessingException {
         Document document = whiteboardService.findDoc(documentId);
         // 마인드맵 생성
 
         ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = objectMapper.readTree(responseEntity.getBody());
+        JsonNode jsonNode = objectMapper.readTree(responseEntity.getBody().getKeywords().toString());
         JsonNode keywordsNode = jsonNode.get("keywords");
         List<String> keywords = objectMapper.convertValue(keywordsNode, new TypeReference<List<String>>() {});
 
@@ -45,7 +46,7 @@ public class KeywordService {
         return keywords;
     }
 
-    public List<String> renewKeywords(ResponseEntity<String> responseEntity, Long documentId) throws JsonProcessingException {
+    public List<String> renewKeywords(ResponseEntity<KeywordsBodyDto> responseEntity, Long documentId) throws JsonProcessingException {
         Document document = whiteboardService.findDoc(documentId);
         // 마인드맵 생성
         Optional<Keyword> keyword = keywordRepository.findByDocumentId(documentId);
@@ -57,7 +58,7 @@ public class KeywordService {
         deleteAllKeywords(formerKeyword);
 
         ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = objectMapper.readTree(responseEntity.getBody());
+        JsonNode jsonNode = objectMapper.readTree(responseEntity.getBody().getKeywords().toString());
         JsonNode keywordsNode = jsonNode.get("keywords");
         List<String> keywords = objectMapper.convertValue(keywordsNode, new TypeReference<List<String>>() {});
 

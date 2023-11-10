@@ -4,11 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smart.watchboard.domain.Summary;
+import com.smart.watchboard.dto.KeywordsBodyDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -24,7 +26,7 @@ public class RequestService {
     private final MindmapService mindmapService;
     private final SummaryService summaryService;
 
-    public ResponseEntity<String> requestPdfKeywords(String filePath) {
+    public ResponseEntity<KeywordsBodyDto> requestPdfKeywords(String filePath) {
         int startIndex = filePath.indexOf("application/pdf/") + "application/pdf/".length();
         String fileName = filePath.substring(startIndex);
 
@@ -32,27 +34,44 @@ public class RequestService {
         String url = aiUrl + "/keywords";
         // 요청 헤더 추가
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Content-Type", "application/json");
+        headers.set("Content-Type", MediaType.APPLICATION_JSON_VALUE);
 
         // 요청 본문 추가
         String requestBody = """
                 {
                   "dbInfo": {
-                    "key": %s,
+                    "key": "%s",
                     "db": "s3"
                   }
                 }
                 """.formatted(fileName);
+
         HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
+        // 요청 보내기
+        try {
+            ResponseEntity<KeywordsBodyDto> responseEntity = restTemplate.exchange(url, HttpMethod.POST, requestEntity, KeywordsBodyDto.class);
+            //ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
+
+            System.out.println(responseEntity.getBody());
+            //return new ResponseEntity<>(HttpStatus.OK);
+            return responseEntity;
+        } catch (HttpClientErrorException e) {
+            // 에러 응답 처리
+            System.err.println("Error response: " + e.getResponseBodyAsString());
+            return new ResponseEntity<>(e.getStatusCode());
+        }
 
         // 요청 보내기
-        ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
-
-        return responseEntity;
+//        ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
+//        System.out.println(responseEntity.getBody().toString());
+//        ResponseEntity<String> responseEntity1 = new ResponseEntity<>(HttpStatus.OK);
+//        return responseEntity1;
+        //        JSONObject requestBody = new JSONObject();
+//        requestBody.put("key", "value");
     }
 
     // 수정필요
-    public ResponseEntity<String> requestSTTKeywords(String text) {
+    public ResponseEntity<KeywordsBodyDto> requestSTTKeywords(String text) {
         RestTemplate restTemplate = new RestTemplate();
         String url = aiUrl + "/keywords";
         // 요청 헤더 추가
@@ -64,7 +83,7 @@ public class RequestService {
         String requestBody = """
                 {
                   "dbInfo": {
-                    "key": %s,
+                    "key": "%s",
                     "db": "mysql"
                   }
                 }
@@ -72,7 +91,7 @@ public class RequestService {
         HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
 
         // 요청 보내기
-        ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
+        ResponseEntity<KeywordsBodyDto> responseEntity = restTemplate.exchange(url, HttpMethod.POST, requestEntity, KeywordsBodyDto.class);
         //ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
         return responseEntity;
     }
@@ -92,7 +111,7 @@ public class RequestService {
         String requestBody = """
                 {
                   "dbInfo": {
-                    "key": %s,
+                    "key": "%s",
                     "db": "s3"
                   }
                 }
@@ -121,7 +140,7 @@ public class RequestService {
         String requestBody = """
                 {
                   "dbInfo": {
-                    "key": %s,
+                    "key": "%s",
                     "db": "mysql"
                   }
                 }
@@ -153,10 +172,10 @@ public class RequestService {
         String requestBody = """
                 {
                   "dbInfo": {
-                    "key": %s,
+                    "key": "%s",
                     "db": "s3"
                   },
-                  "keywords": %s,
+                  "keywords": "%s",
                   "documentId": %d
                 }
                 """.formatted(filePath, keywords.toString(), documentId);
@@ -183,10 +202,10 @@ public class RequestService {
         String requestBody = """
                 {
                   "dbInfo": {
-                    "key": %s,
+                    "key": "%s",
                     "db": "mysql"
                   },
-                  "keywords": %s,
+                  "keywords": "%s",
                   "documentId": %d
                 }
                 """.formatted(stt, keywords.toString(), documentId);
@@ -210,8 +229,8 @@ public class RequestService {
 
         String requestBody = """
                 {
-                  "summary": %s,
-                  "text": %s
+                  "summary": "%s",
+                  "text": "%s"
                 }
                 """.formatted(summary.getContent(), keywordLabel);
         HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);

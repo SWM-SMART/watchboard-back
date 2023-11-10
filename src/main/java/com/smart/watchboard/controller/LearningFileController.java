@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.smart.watchboard.common.support.AwsS3Uploader;
 import com.smart.watchboard.domain.File;
 import com.smart.watchboard.dto.FileDto;
+import com.smart.watchboard.dto.KeywordsBodyDto;
 import com.smart.watchboard.dto.KeywordsDto;
 import com.smart.watchboard.dto.S3Dto;
 import com.smart.watchboard.service.*;
@@ -37,7 +38,7 @@ public class LearningFileController {
     public ResponseEntity<?> uploadLearningFile(@PathVariable(value = "documentID") long documentId, @RequestParam("pdf") MultipartFile pdfFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
         S3Dto s3Dto = new S3Dto(pdfFile, documentId);
         String path = awsS3Uploader.uploadFile(s3Dto);
-        ResponseEntity<String> responseEntity = requestService.requestPdfKeywords(path);
+        ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestPdfKeywords(path);
         keywordService.createKeywords(responseEntity, documentId);
 
         String summary = requestService.requestPdfSummary(path);
@@ -51,7 +52,7 @@ public class LearningFileController {
     public ResponseEntity<?> updateLearningFile(@PathVariable(value = "documentID") long documentId, @RequestParam("pdf") MultipartFile pdfFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
         S3Dto s3Dto = new S3Dto(pdfFile, documentId);
         String path = awsS3Uploader.uploadFile(s3Dto);
-        ResponseEntity<String> responseEntity = requestService.requestPdfKeywords(path);
+        ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestPdfKeywords(path);
         keywordService.renewKeywords(responseEntity, documentId);
 
         String summary = requestService.requestPdfSummary(path);
