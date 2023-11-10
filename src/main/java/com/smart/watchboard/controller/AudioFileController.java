@@ -2,11 +2,11 @@ package com.smart.watchboard.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.smart.watchboard.common.support.AwsS3Uploader;
+import com.smart.watchboard.domain.Document;
+import com.smart.watchboard.domain.LectureNote;
+import com.smart.watchboard.domain.Note;
 import com.smart.watchboard.domain.SttData;
-import com.smart.watchboard.dto.KeywordsDto;
-import com.smart.watchboard.dto.S3Dto;
-import com.smart.watchboard.dto.SttDto;
-import com.smart.watchboard.dto.UploadDto;
+import com.smart.watchboard.dto.*;
 import com.smart.watchboard.service.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +39,7 @@ public class AudioFileController {
     private final KeywordService keywordService;
 
     @PostMapping("/{documentID}/audio")
-    public ResponseEntity<?> uploadAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audioFile") MultipartFile audioFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
+    public ResponseEntity<?> uploadAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audio") MultipartFile audioFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
         // 토큰 검증
         // s3에 오디오 파일 저장
         S3Dto s3Dto = new S3Dto(audioFile, documentId);
@@ -52,7 +52,7 @@ public class AudioFileController {
         lectureNoteService.createLectureNote(documentId, data, sttResult);
         //noteService.createNote(documentId, sttResult);
 
-        ResponseEntity<String> responseEntity = requestService.requestSTTKeywords(sttResult);
+        ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestSTTKeywords(sttResult);
         List<String> keywords = keywordService.createKeywords(responseEntity, documentId);
 
         // 요약본 요청
@@ -69,7 +69,7 @@ public class AudioFileController {
     }
 
     @PutMapping("/{documentID}/audio")
-    public ResponseEntity<?> updateAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audioFile") MultipartFile audioFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
+    public ResponseEntity<?> updateAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audio") MultipartFile audioFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
         S3Dto s3Dto = new S3Dto(audioFile, documentId);
         String path = awsS3Uploader.uploadFile(s3Dto);
 
@@ -78,7 +78,7 @@ public class AudioFileController {
         List<SttData> data = sttService.getSTTData(sttResponseEntity);
         lectureNoteService.updateLectureNote(documentId, data, sttResult);
 
-        ResponseEntity<String> responseEntity = requestService.requestSTTKeywords(sttResult);
+        ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestSTTKeywords(sttResult);
         List<String> keywords = keywordService.renewKeywords(responseEntity, documentId); // update
 
         // 요약본 요청
@@ -118,17 +118,17 @@ public class AudioFileController {
                 {"keywords":["eatssss","food","today"]}
                 """;
         //ResponseEntity<String> ss = new ResponseEntity<>(body, HttpStatus.OK);
-        List<String> add = new ArrayList<>();
-        add.add("awwwww");
-        List<String> delete = new ArrayList<>();
-        delete.add("eat");
-        KeywordsDto keywordsDto = new KeywordsDto(add, delete);
-        keywordService.updateKeywords(keywordsDto, 26L);
 //        S3Dto s3Dto = new S3Dto(audioFile, 26L);
 //        String path = awsS3Uploader.uploadFile(s3Dto);
 //        int startIndex = path.indexOf("application/pdf/") + "application/pdf/".length();
 //        String extractedString = path.substring(startIndex);
 //        System.out.println(extractedString);
+//        String path = fileService.getPath(26L);
+//        Document document = whiteboardService.findDoc(26L);
+//        String text = lectureNoteService.getText(26L);
+        String path = "https://s3.ap-northeast-2.amazonaws.com/watchboard-record-bucket/application/pdf/감정분류.pdf";
+        ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestPdfKeywords(path);
+        System.out.println(responseEntity.getBody());
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
