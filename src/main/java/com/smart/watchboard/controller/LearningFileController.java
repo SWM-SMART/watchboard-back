@@ -3,10 +3,7 @@ package com.smart.watchboard.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.smart.watchboard.common.support.AwsS3Uploader;
 import com.smart.watchboard.domain.File;
-import com.smart.watchboard.dto.FileDto;
-import com.smart.watchboard.dto.KeywordsBodyDto;
-import com.smart.watchboard.dto.KeywordsDto;
-import com.smart.watchboard.dto.S3Dto;
+import com.smart.watchboard.dto.*;
 import com.smart.watchboard.service.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -41,8 +38,8 @@ public class LearningFileController {
         ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestPdfKeywords(path);
         keywordService.createKeywords(responseEntity, documentId);
 
-        String summary = requestService.requestPdfSummary(path);
-        summaryService.createSummary(documentId, summary);
+        ResponseEntity<SummaryDto> summary = requestService.requestPdfSummary(path);
+        summaryService.createSummary(documentId, summary.getBody().getSummary());
         whiteboardService.setDataType(documentId, "pdf");
 
         return new ResponseEntity<>(responseEntity.getBody(), HttpStatus.OK);
@@ -55,8 +52,8 @@ public class LearningFileController {
         ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestPdfKeywords(path);
         keywordService.renewKeywords(responseEntity, documentId);
 
-        String summary = requestService.requestPdfSummary(path);
-        summaryService.updateSummary(documentId, summary);
+        ResponseEntity<SummaryDto> summary = requestService.requestPdfSummary(path);
+        summaryService.updateSummary(documentId, summary.getBody().getSummary());
         whiteboardService.setDataType(documentId, "pdf");
 
         return new ResponseEntity<>(responseEntity.getBody(), HttpStatus.OK);
