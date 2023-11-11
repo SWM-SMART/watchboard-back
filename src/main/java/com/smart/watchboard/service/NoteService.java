@@ -1,7 +1,9 @@
 package com.smart.watchboard.service;
 
 import com.smart.watchboard.domain.Document;
+import com.smart.watchboard.domain.File;
 import com.smart.watchboard.domain.Note;
+import com.smart.watchboard.dto.FileDto;
 import com.smart.watchboard.repository.NoteRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,10 +19,13 @@ public class NoteService {
     private final NoteRepository noteRepository;
     private final WhiteboardService whiteboardService;
 
-    public void createNote(Long documentId, String stt) {
-        Document document = whiteboardService.findDoc(documentId);
+    public void createNote(FileDto fileDto) {
+        Document document = whiteboardService.findDoc(fileDto.getDocumentId());
+        String key = fileDto.getFileType() + "/" + fileDto.getDocumentId() + "." + fileDto.getFile().getOriginalFilename();
         Note note = Note.builder()
-                .content(stt)
+                .fileName(fileDto.getFile().getOriginalFilename())
+                .objectKey(key)
+                .path(fileDto.getPath())
                 .createdAt(Instant.now())
                 .modifiedAt(Instant.now())
                 .isDelete(false)
@@ -30,10 +35,11 @@ public class NoteService {
         noteRepository.save(note);
     }
 
-    public void updateNote(Long documentId, String stt) {
-        Document document = whiteboardService.findDoc(documentId);
+    public void updateNote(FileDto fileDto) {
+        Document document = whiteboardService.findDoc(fileDto.getDocumentId());
         Note note = findNote(document);
-        note.setContent(stt);
+        note.setFileName(fileDto.getFile().getOriginalFilename());
+        note.setPath(fileDto.getPath());
         note.setModifiedAt(Instant.now());
 
         noteRepository.save(note);
@@ -46,6 +52,11 @@ public class NoteService {
     }
 
     public Note findNote(Document document) {
+        return noteRepository.findByDocument(document);
+    }
+
+    public Note findByDocument(Long documentId) {
+        Document document = whiteboardService.findDoc(documentId);
         return noteRepository.findByDocument(document);
     }
 }

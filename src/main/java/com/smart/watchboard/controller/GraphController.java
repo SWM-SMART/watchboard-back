@@ -1,6 +1,7 @@
 package com.smart.watchboard.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.smart.watchboard.dto.AnswerDto;
 import com.smart.watchboard.dto.KeywordsBodyDto;
 import com.smart.watchboard.dto.KeywordsDto;
 import com.smart.watchboard.dto.MindmapDto;
@@ -69,7 +70,7 @@ public class GraphController {
     @GetMapping("/documents/{documentID}/mindmap/keyword/{keywordLabel}")
     @Operation(summary = "키워드 질문", description = "키워드 AI에 질문")
     public ResponseEntity<?> getAnswer(@PathVariable(value = "documentID") long documentId, @PathVariable String keywordLabel, @RequestHeader("Authorization") String accessToken) throws JsonProcessingException {
-        ResponseEntity<String> responseEntity = requestService.requestAnswer(documentId, keywordLabel);
+        ResponseEntity<AnswerDto> responseEntity = requestService.requestAnswer(documentId, keywordLabel);
 
         return new ResponseEntity<>(responseEntity, HttpStatus.OK);
     }

@@ -5,15 +5,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
-
 @Getter
 @Setter
-public class KeywordsBodyDto {
-    private List<String> keywords;
+public class SummaryDto {
+
+    private String summary;
 
     @JsonCreator
-    public KeywordsBodyDto(@JsonProperty("keywords") List<String> keywords) {
-        this.keywords = keywords;
+    public SummaryDto(@JsonProperty("summary") String summary) {
+        this.summary = summary;
     }
 }

@@ -1,5 +1,7 @@
 package com.smart.watchboard.service;
 
+import com.smart.watchboard.domain.Note;
+import com.smart.watchboard.dto.MindmapResponseDto;
 import com.smart.watchboard.repository.EmitterRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +20,7 @@ public class SseService {
     private final WhiteboardService whiteboardService;
     private final RequestService requestService;
     private final LectureNoteService lectureNoteService;
-    private final STTService sttService;
+    private final NoteService noteService;
 
     public SseEmitter subscribe(Long documentId) {
         SseEmitter emitter = createEmitter(documentId);
@@ -49,11 +51,11 @@ public class SseService {
             try {
                 if (whiteboardService.isPdfType(documentId)) {
                     String path = fileService.getPdfUrl(documentId);
-                    ResponseEntity<String> body = requestService.requestPdfMindmap(path, documentId, keywords);
+                    ResponseEntity<MindmapResponseDto> body = requestService.requestPdfMindmap(path, documentId, keywords);
                     emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("sse").data(body.getBody()));
                 } else if (whiteboardService.isAudioType(documentId)) {
-                    String text = lectureNoteService.getText(documentId);
-                    ResponseEntity<String> body = requestService.requestSTTMindmap(text, documentId, keywords);
+                    Note note = noteService.findByDocument(documentId);
+                    ResponseEntity<MindmapResponseDto> body = requestService.requestSTTMindmap(note.getPath(), documentId, keywords);
                     emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("sse").data(body.getBody()));
                 }
             } catch (IOException exception) {
