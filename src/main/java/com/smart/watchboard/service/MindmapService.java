@@ -1,13 +1,10 @@
 package com.smart.watchboard.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smart.watchboard.domain.Document;
 import com.smart.watchboard.domain.Mindmap;
-import com.smart.watchboard.dto.KeywordsDto;
 import com.smart.watchboard.dto.MindmapDto;
+import com.smart.watchboard.dto.MindmapResponseDto;
 import com.smart.watchboard.repository.MindmapRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,9 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -28,16 +22,16 @@ public class MindmapService {
     private final MindmapRepository mindmapRepository;
     private final WhiteboardService whiteboardService;
 
-    public void createMindmap(ResponseEntity<String> responseEntity, Long documentId) throws JsonProcessingException {
+    public void createMindmap(ResponseEntity<MindmapResponseDto> responseEntity, Long documentId) throws JsonProcessingException {
         Document document = whiteboardService.findDoc(documentId);
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = objectMapper.readTree(responseEntity.getBody());
-        Integer root = jsonNode.get("root").asInt();
-        JsonNode keywordsNode = jsonNode.get("keywords");
-        List<String> keywords = objectMapper.convertValue(keywordsNode, new TypeReference<List<String>>() {});
-        JsonNode graphNode = jsonNode.get("graph");
-        Map<String, List<Integer>> graphMap = objectMapper.convertValue(graphNode, new TypeReference<Map<String, List<Integer>>>() {});
+//        ObjectMapper objectMapper = new ObjectMapper();
+//        JsonNode jsonNode = objectMapper.readTree(responseEntity.getBody());
+//        Integer root = jsonNode.get("root").asInt();
+//        JsonNode keywordsNode = jsonNode.get("keywords");
+//        List<String> keywords = objectMapper.convertValue(keywordsNode, new TypeReference<List<String>>() {});
+//        JsonNode graphNode = jsonNode.get("graph");
+//        Map<String, List<Integer>> graphMap = objectMapper.convertValue(graphNode, new TypeReference<Map<String, List<Integer>>>() {});
 
         Optional<Mindmap> formerMindmap = mindmapRepository.findByDocumentId(documentId);
         if (formerMindmap.isPresent()) {
@@ -47,8 +41,8 @@ public class MindmapService {
                     .documentName(document.getDocumentName())
                     .createdAt(formerMindmap.get().getCreatedAt())
                     .modifiedAt(Instant.now())
-                    .root(root)
-                    .graph(graphMap)
+                    .root(responseEntity.getBody().getRoot())
+                    .graph(responseEntity.getBody().getGraph())
                     .build();
             mindmapRepository.save(mindmap);
         } else if (!formerMindmap.isPresent()) {
@@ -57,8 +51,8 @@ public class MindmapService {
                     .documentName(document.getDocumentName())
                     .createdAt(Instant.now())
                     .modifiedAt(Instant.now())
-                    .root(root)
-                    .graph(graphMap)
+                    .root(responseEntity.getBody().getRoot())
+                    .graph(responseEntity.getBody().getGraph())
                     .build();
             mindmapRepository.save(mindmap);
         }
