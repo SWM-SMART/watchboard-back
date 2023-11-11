@@ -40,7 +40,7 @@ public class AwsS3Uploader {
         objectMetadata.setContentLength(s3Dto.getFile().getSize());
 
         String directoryName = s3Dto.getFile().getContentType();
-        String fileName = directoryName + "/" + s3Dto.getDocumentId() + "." + s3Dto.getFile().getOriginalFilename();
+        String fileName = directoryName + "/" + s3Dto.getUserId() + "_" + s3Dto.getDocumentId() + "." + s3Dto.getDataType();
 
         try (InputStream inputStream = s3Dto.getFile().getInputStream()) {
             amazonS3Client.putObject(new PutObjectRequest(bucket, fileName, inputStream, objectMetadata)
@@ -67,7 +67,7 @@ public class AwsS3Uploader {
         objectMetadata.setContentLength(s3Dto.getFile().getSize());
 
         String directoryName = s3Dto.getFile().getContentType();
-        String fileName = directoryName + "/" + s3Dto.getDocumentId() + "." + s3Dto.getFile().getOriginalFilename();
+        String fileName = directoryName + "/" + s3Dto.getUserId() + "_" + s3Dto.getDocumentId() + "." + s3Dto.getDataType();
 
         try (InputStream inputStream = s3Dto.getFile().getInputStream()) {
             amazonS3Client.putObject(new PutObjectRequest(bucket, fileName, inputStream, objectMetadata)

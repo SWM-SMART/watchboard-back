@@ -24,6 +24,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static com.smart.watchboard.common.support.PdfConverter.convertStringToPdf;
 
@@ -43,19 +44,22 @@ public class AudioFileController {
     private final MindmapService mindmapService;
     private final WhiteboardService whiteboardService;
     private final KeywordService keywordService;
+    private final JwtService jwtService;
 
     @PostMapping("/{documentID}/audio")
     public ResponseEntity<?> uploadAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audio") MultipartFile audioFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException, DocumentException {
-        // 토큰 검증
+        Optional<Long> id = jwtService.extractUserId(accessToken);
+        Long userId = id.orElse(null);
+
         // s3에 오디오 파일 저장
-        S3Dto s3Dto = new S3Dto(audioFile, documentId);
+        S3Dto s3Dto = new S3Dto(audioFile, documentId, userId, "mp3");
         String path = awsS3Uploader.uploadFile(s3Dto);
         // STT
         //String sttResult = sttService.getSTT(path);
         ResponseEntity<String> sttResponseEntity = sttService.getSTT(path);
         String sttResult = sttService.getText(sttResponseEntity);
         // convert
-        String sttFileName = "sttResult.pdf";
+        String sttFileName = String.valueOf(userId) + "_" + String.valueOf(documentId) + ".pdf";
         File textPdfFile = convertStringToPdf(sttResult, sttFileName);
 
         String contentType = "application/pdf";
@@ -64,7 +68,7 @@ public class AudioFileController {
 
         FileInputStream fileInputStream = new FileInputStream(textPdfFile);
         MultipartFile multipartFile = new MockMultipartFile(name, originalFilename, contentType, fileInputStream);
-        S3Dto s3DtoForSTT = new S3Dto(multipartFile, 26L);
+        S3Dto s3DtoForSTT = new S3Dto(multipartFile, documentId, userId, "pdf");
         String textPdfPath = awsS3Uploader.uploadTextPdfFile(s3DtoForSTT);
 
         List<SttData> data = sttService.getSTTData(sttResponseEntity);
@@ -87,7 +91,10 @@ public class AudioFileController {
 
     @PutMapping("/{documentID}/audio")
     public ResponseEntity<?> updateAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audio") MultipartFile audioFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException, DocumentException {
-        S3Dto s3Dto = new S3Dto(audioFile, documentId);
+        Optional<Long> id = jwtService.extractUserId(accessToken);
+        Long userId = id.orElse(null);
+
+        S3Dto s3Dto = new S3Dto(audioFile, documentId, userId, "mp3");
         String path = awsS3Uploader.uploadFile(s3Dto);
 
         ResponseEntity<String> sttResponseEntity = sttService.getSTT(path);
@@ -96,7 +103,8 @@ public class AudioFileController {
         lectureNoteService.updateLectureNote(documentId, data, sttResult);
 
         // convert
-        String sttFileName = "sttResult.pdf";
+
+        String sttFileName = String.valueOf(userId) + "_" + String.valueOf(documentId) + ".pdf";
         File textPdfFile = convertStringToPdf(sttResult, sttFileName);
 
         String contentType = "application/pdf";
@@ -105,7 +113,7 @@ public class AudioFileController {
 
         FileInputStream fileInputStream = new FileInputStream(textPdfFile);
         MultipartFile multipartFile = new MockMultipartFile(name, originalFilename, contentType, fileInputStream);
-        S3Dto s3DtoForSTT = new S3Dto(multipartFile, 26L);
+        S3Dto s3DtoForSTT = new S3Dto(multipartFile, documentId, userId, "pdf");
         String textPdfPath = awsS3Uploader.uploadTextPdfFile(s3DtoForSTT);
 
         ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestSTTKeywords(textPdfPath);
