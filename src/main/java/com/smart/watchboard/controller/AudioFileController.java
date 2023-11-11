@@ -1,6 +1,7 @@
 package com.smart.watchboard.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.itextpdf.text.DocumentException;
 import com.smart.watchboard.common.support.AwsS3Uploader;
 import com.smart.watchboard.domain.Document;
 import com.smart.watchboard.domain.LectureNote;
@@ -13,13 +14,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.smart.watchboard.common.support.PdfConverter.convertStringToPdf;
 
 @RestController
 @RequestMapping("/documents")
@@ -39,7 +45,7 @@ public class AudioFileController {
     private final KeywordService keywordService;
 
     @PostMapping("/{documentID}/audio")
-    public ResponseEntity<?> uploadAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audio") MultipartFile audioFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
+    public ResponseEntity<?> uploadAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audio") MultipartFile audioFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException, DocumentException {
         // 토큰 검증
         // s3에 오디오 파일 저장
         S3Dto s3Dto = new S3Dto(audioFile, documentId);
@@ -48,18 +54,29 @@ public class AudioFileController {
         //String sttResult = sttService.getSTT(path);
         ResponseEntity<String> sttResponseEntity = sttService.getSTT(path);
         String sttResult = sttService.getText(sttResponseEntity);
+        // convert
+        String sttFileName = "sttResult.pdf";
+        File textPdfFile = convertStringToPdf(sttResult, sttFileName);
+
+        String contentType = "application/pdf";
+        String originalFilename = textPdfFile.getName();
+        String name = textPdfFile.getName();
+
+        FileInputStream fileInputStream = new FileInputStream(textPdfFile);
+        MultipartFile multipartFile = new MockMultipartFile(name, originalFilename, contentType, fileInputStream);
+        S3Dto s3DtoForSTT = new S3Dto(multipartFile, 26L);
+        String textPdfPath = awsS3Uploader.uploadTextPdfFile(s3DtoForSTT);
+
         List<SttData> data = sttService.getSTTData(sttResponseEntity);
         lectureNoteService.createLectureNote(documentId, data, sttResult);
-        //noteService.createNote(documentId, sttResult);
 
-        ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestSTTKeywords(sttResult);
+        ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestSTTKeywords(textPdfPath);
         List<String> keywords = keywordService.createKeywords(responseEntity, documentId);
 
         // 요약본 요청
-        String summary = requestService.requestSTTSummary(sttResult);
-        summaryService.createSummary(documentId, summary);
+        ResponseEntity<SummaryDto> summary = requestService.requestSTTSummary(textPdfPath);
+        summaryService.createSummary(documentId, summary.getBody().getSummary());
 
-        //String body = fileService.createResponseBody(responseEntity, sttResult);
         UploadDto uploadDto = new UploadDto(keywords, data);
 
         whiteboardService.setDataType(documentId, "audio");
@@ -69,7 +86,7 @@ public class AudioFileController {
     }
 
     @PutMapping("/{documentID}/audio")
-    public ResponseEntity<?> updateAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audio") MultipartFile audioFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
+    public ResponseEntity<?> updateAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audio") MultipartFile audioFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException, DocumentException {
         S3Dto s3Dto = new S3Dto(audioFile, documentId);
         String path = awsS3Uploader.uploadFile(s3Dto);
 
@@ -78,12 +95,25 @@ public class AudioFileController {
         List<SttData> data = sttService.getSTTData(sttResponseEntity);
         lectureNoteService.updateLectureNote(documentId, data, sttResult);
 
-        ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestSTTKeywords(sttResult);
+        // convert
+        String sttFileName = "sttResult.pdf";
+        File textPdfFile = convertStringToPdf(sttResult, sttFileName);
+
+        String contentType = "application/pdf";
+        String originalFilename = textPdfFile.getName();
+        String name = textPdfFile.getName();
+
+        FileInputStream fileInputStream = new FileInputStream(textPdfFile);
+        MultipartFile multipartFile = new MockMultipartFile(name, originalFilename, contentType, fileInputStream);
+        S3Dto s3DtoForSTT = new S3Dto(multipartFile, 26L);
+        String textPdfPath = awsS3Uploader.uploadTextPdfFile(s3DtoForSTT);
+
+        ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestSTTKeywords(textPdfPath);
         List<String> keywords = keywordService.renewKeywords(responseEntity, documentId); // update
 
         // 요약본 요청
-        String summary = requestService.requestSTTSummary(sttResult);
-        summaryService.updateSummary(documentId, summary); // update
+        ResponseEntity<SummaryDto> summary = requestService.requestSTTSummary(sttResult);
+        summaryService.updateSummary(documentId, summary.getBody().getSummary()); // update
         UploadDto uploadDto = new UploadDto(keywords, data);
 
         whiteboardService.setDataType(documentId, "audio");
@@ -113,22 +143,26 @@ public class AudioFileController {
     }
 
     @PostMapping("/testffff")
-    public ResponseEntity<?> test(@RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
+    public ResponseEntity<?> test(@RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException, DocumentException {
         String body = """
                 {"keywords":["eatssss","food","today"]}
                 """;
-        //ResponseEntity<String> ss = new ResponseEntity<>(body, HttpStatus.OK);
-//        S3Dto s3Dto = new S3Dto(audioFile, 26L);
-//        String path = awsS3Uploader.uploadFile(s3Dto);
-//        int startIndex = path.indexOf("application/pdf/") + "application/pdf/".length();
-//        String extractedString = path.substring(startIndex);
-//        System.out.println(extractedString);
-//        String path = fileService.getPath(26L);
-//        Document document = whiteboardService.findDoc(26L);
-//        String text = lectureNoteService.getText(26L);
+//        String sttResult = "안녕하세요 Hello!!!!";
+//        String sttFileName = "sttResult.pdf";
+//        File textPdfFile = convertStringToPdf(sttResult, sttFileName);
+//        String contentType = "application/pdf";
+//        String originalFilename = textPdfFile.getName();
+//        String name = textPdfFile.getName();
+//
+//
+//        FileInputStream fileInputStream = new FileInputStream(textPdfFile);
+//        MultipartFile multipartFile = new MockMultipartFile(name, originalFilename, contentType, fileInputStream);
+//        S3Dto s3Dto = new S3Dto(multipartFile, 26L);
+//        String path = awsS3Uploader.uploadTextPdfFile(s3Dto);
+//        System.out.println(path);
         String path = "https://s3.ap-northeast-2.amazonaws.com/watchboard-record-bucket/application/pdf/감정분류.pdf";
-        ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestPdfKeywords(path);
-        System.out.println(responseEntity.getBody());
+        ResponseEntity<SummaryDto> responseEntity = requestService.requestPdfSummary(path);
+        System.out.println(responseEntity.getBody().getSummary());
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
