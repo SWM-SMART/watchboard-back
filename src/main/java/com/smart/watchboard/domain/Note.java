@@ -18,10 +18,13 @@ public class Note {
     @Column(name = "note_id")
     private Long id;
 
-    @Column(length = 16000)
-    private String content;
+    private String fileName;
+    private String objectKey;
 
-    //private Long size;
+    @Column(columnDefinition = "varchar(1000)", nullable = false)
+    private String path;
+
+    private Long size;
     private Instant createdAt;
     private Instant modifiedAt;
     private boolean isDelete;
