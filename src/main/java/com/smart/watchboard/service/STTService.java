@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smart.watchboard.domain.SttData;
+import com.smart.watchboard.dto.SttRequestDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,26 +24,18 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class STTService {
-    @Value("${clova.stt.secret-key}")
-    private String secretKey;
-
-    @Value("${clova.stt.invoke-url}")
-    private String clovaInvokeURL;
+    @Value("${ai-url}")
+    private String aiUrl;
 
     public ResponseEntity<String> getSTT(String path) throws JsonProcessingException {
+        String url = aiUrl + "/stt";
+        //
         RestTemplate restTemplate = new RestTemplate();
-        String requestURL = clovaInvokeURL + "/recognizer/url";
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type", "application/json");
-        headers.set("X-CLOVASPEECH-API-KEY", secretKey);
-        String requestBody = "{" +
-                "\"url\": \"" + path + "\", " +
-                "\"language\": \"ko-KR\", " +
-                "\"completion\": \"sync\"" +
-                "}";
-        HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
-        System.out.println(requestEntity.getBody());
-        ResponseEntity<String> responseEntity = restTemplate.exchange(requestURL, HttpMethod.POST, requestEntity, String.class);
+        SttRequestDto sttRequestDto = new SttRequestDto(path);
+        HttpEntity<SttRequestDto> requestEntity = new HttpEntity<>(sttRequestDto, headers);
+        ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
 
         return responseEntity;
     }
@@ -62,9 +55,6 @@ public class STTService {
             sttDatas.add(sttData);
         }
 
-        //result.put("data", sttDatas);
-
-        //return result;
         return sttDatas;
     }
 
