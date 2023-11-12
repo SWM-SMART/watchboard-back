@@ -22,7 +22,7 @@ public class SseService {
     private final FileService fileService;
     private final WhiteboardService whiteboardService;
     private final RequestService requestService;
-    private final LectureNoteService lectureNoteService;
+    //private final LectureNoteService lectureNoteService;
     private final NoteService noteService;
     private final KeywordService keywordService;
     private final SummaryService summaryService;
