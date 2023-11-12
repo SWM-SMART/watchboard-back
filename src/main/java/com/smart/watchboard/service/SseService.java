@@ -1,18 +1,24 @@
 package com.smart.watchboard.service;
 
+import com.itextpdf.text.DocumentException;
+import com.smart.watchboard.common.support.AwsS3Uploader;
 import com.smart.watchboard.domain.Note;
-import com.smart.watchboard.dto.AnswerDto;
-import com.smart.watchboard.dto.KeywordsBodyDto;
-import com.smart.watchboard.dto.MindmapResponseDto;
-import com.smart.watchboard.dto.SummaryDto;
+import com.smart.watchboard.domain.SttData;
+import com.smart.watchboard.dto.*;
 import com.smart.watchboard.repository.EmitterRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.List;
+
+import static com.smart.watchboard.common.support.PdfConverter.convertStringToPdf;
 
 @Service
 @RequiredArgsConstructor
@@ -22,10 +28,12 @@ public class SseService {
     private final FileService fileService;
     private final WhiteboardService whiteboardService;
     private final RequestService requestService;
-    //private final LectureNoteService lectureNoteService;
+    private final LectureNoteService lectureNoteService;
     private final NoteService noteService;
     private final KeywordService keywordService;
     private final SummaryService summaryService;
+    private final STTService sttService;
+    private final AwsS3Uploader awsS3Uploader;
 
     public SseEmitter subscribe(Long documentId) {
         SseEmitter emitter = createEmitter(documentId);
@@ -78,8 +86,17 @@ public class SseService {
         sendSummary(documentId, path);
     }
 
-    public void notifyAnswer(Long documentId, String path) {
-        sendAnswer(documentId, path);
+    public void notifyAnswer(Long documentId, String keywordLabel) {
+        sendAnswer(documentId, keywordLabel);
+    }
+
+    public void notifySTT(Long documentId, String path, Long userId) {
+        Note note = noteService.findByDocument(documentId);
+        if (note == null) {
+            sendSTT(documentId, path, userId);
+        } else {
+            sendSTTUpdate(documentId, path, userId);
+        }
     }
 
     private void sendKeywords(Long documentId, String path) {
@@ -133,6 +150,74 @@ public class SseService {
             }
         }
 
+    }
+
+    private void sendSTT(Long documentId, String path, Long userId) {
+        SseEmitter emitter = emitterRepository.get(documentId);
+        if (emitter != null) {
+            try {
+                ResponseEntity<String> sttResponseEntity = sttService.getSTT(path);
+                String sttResult = sttService.getText(sttResponseEntity);
+
+                List<SttData> data = sttService.getSTTData(sttResponseEntity);
+                lectureNoteService.createLectureNote(documentId, data, sttResult);
+                SttDataDto sttDataDto = new SttDataDto(data);
+
+                String sttFileName = String.valueOf(userId) + "_" + String.valueOf(documentId) + ".pdf";
+                File textPdfFile = convertStringToPdf(sttResult, sttFileName);
+
+                String contentType = "application/pdf";
+                String originalFilename = textPdfFile.getName();
+                String name = textPdfFile.getName();
+
+                FileInputStream fileInputStream = new FileInputStream(textPdfFile);
+                MultipartFile multipartFile = new MockMultipartFile(name, originalFilename, contentType, fileInputStream);
+                S3Dto s3DtoForSTT = new S3Dto(multipartFile, documentId, userId, "pdf");
+                String textPdfPath = awsS3Uploader.uploadTextPdfFile(s3DtoForSTT);
+
+                notifyKeywords(documentId, textPdfPath);
+                notifySummary(documentId, textPdfPath);
+
+                emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("audio").data(sttDataDto));
+            } catch (IOException | DocumentException exception) {
+                emitterRepository.deleteById(documentId);
+                emitter.completeWithError(exception);
+            }
+        }
+    }
+
+    private void sendSTTUpdate(Long documentId, String path, Long userId) {
+        SseEmitter emitter = emitterRepository.get(documentId);
+        if (emitter != null) {
+            try {
+                ResponseEntity<String> sttResponseEntity = sttService.getSTT(path);
+                String sttResult = sttService.getText(sttResponseEntity);
+
+                List<SttData> data = sttService.getSTTData(sttResponseEntity);
+                lectureNoteService.updateLectureNote(documentId, data, sttResult);
+                SttDataDto sttDataDto = new SttDataDto(data);
+
+                String sttFileName = String.valueOf(userId) + "_" + String.valueOf(documentId) + ".pdf";
+                File textPdfFile = convertStringToPdf(sttResult, sttFileName);
+
+                String contentType = "application/pdf";
+                String originalFilename = textPdfFile.getName();
+                String name = textPdfFile.getName();
+
+                FileInputStream fileInputStream = new FileInputStream(textPdfFile);
+                MultipartFile multipartFile = new MockMultipartFile(name, originalFilename, contentType, fileInputStream);
+                S3Dto s3DtoForSTT = new S3Dto(multipartFile, documentId, userId, "pdf");
+                String textPdfPath = awsS3Uploader.uploadTextPdfFile(s3DtoForSTT);
+
+                notifyKeywords(documentId, textPdfPath);
+                notifySummary(documentId, textPdfPath);
+
+                emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("audio").data(sttDataDto));
+            } catch (IOException | DocumentException exception) {
+                emitterRepository.deleteById(documentId);
+                emitter.completeWithError(exception);
+            }
+        }
     }
 
     private SseEmitter createEmitter(Long documentId) {

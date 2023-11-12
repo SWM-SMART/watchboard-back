@@ -70,9 +70,10 @@ public class GraphController {
     @GetMapping("/documents/{documentID}/mindmap/keyword/{keywordLabel}")
     @Operation(summary = "키워드 질문", description = "키워드 AI에 질문")
     public ResponseEntity<?> getAnswer(@PathVariable(value = "documentID") long documentId, @PathVariable String keywordLabel, @RequestHeader("Authorization") String accessToken) throws JsonProcessingException {
-        ResponseEntity<AnswerDto> responseEntity = requestService.requestAnswer(documentId, keywordLabel);
+        //ResponseEntity<AnswerDto> responseEntity = requestService.requestAnswer(documentId, keywordLabel);
+        sseService.notifyAnswer(documentId, keywordLabel);
 
-        return new ResponseEntity<>(responseEntity, HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @GetMapping(value = "documents/{documentID}/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)

@@ -54,37 +54,7 @@ public class AudioFileController {
         // s3에 오디오 파일 저장
         S3Dto s3Dto = new S3Dto(audioFile, documentId, userId, "mp3");
         String path = awsS3Uploader.uploadFile(s3Dto);
-        // STT
-        //String sttResult = sttService.getSTT(path);
-        ResponseEntity<String> sttResponseEntity = sttService.getSTT(path);
-        String sttResult = sttService.getText(sttResponseEntity);
-        // convert
-        String sttFileName = String.valueOf(userId) + "_" + String.valueOf(documentId) + ".pdf";
-        File textPdfFile = convertStringToPdf(sttResult, sttFileName);
-
-        String contentType = "application/pdf";
-        String originalFilename = textPdfFile.getName();
-        String name = textPdfFile.getName();
-
-        FileInputStream fileInputStream = new FileInputStream(textPdfFile);
-        MultipartFile multipartFile = new MockMultipartFile(name, originalFilename, contentType, fileInputStream);
-        S3Dto s3DtoForSTT = new S3Dto(multipartFile, documentId, userId, "pdf");
-        String textPdfPath = awsS3Uploader.uploadTextPdfFile(s3DtoForSTT);
-
-        List<SttData> data = sttService.getSTTData(sttResponseEntity);
-        lectureNoteService.createLectureNote(documentId, data, sttResult);
-
-//        ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestSTTKeywords(textPdfPath);
-//        List<String> keywords = keywordService.createKeywords(responseEntity, documentId);
-//
-//        // 요약본 요청
-//        ResponseEntity<SummaryDto> summary = requestService.requestSTTSummary(textPdfPath);
-//        summaryService.createSummary(documentId, summary.getBody().getSummary());
-        sseService.notifyKeywords(documentId, textPdfPath);
-        sseService.notifySummary(documentId, textPdfPath);
-
-
-        //UploadDto uploadDto = new UploadDto(keywords, data);
+        sseService.notifySTT(documentId, path, userId);
 
         whiteboardService.setDataType(documentId, "audio");
 
@@ -99,36 +69,7 @@ public class AudioFileController {
 
         S3Dto s3Dto = new S3Dto(audioFile, documentId, userId, "mp3");
         String path = awsS3Uploader.uploadFile(s3Dto);
-
-        ResponseEntity<String> sttResponseEntity = sttService.getSTT(path);
-        String sttResult = sttService.getText(sttResponseEntity);
-        List<SttData> data = sttService.getSTTData(sttResponseEntity);
-        lectureNoteService.updateLectureNote(documentId, data, sttResult);
-
-        // convert
-
-        String sttFileName = String.valueOf(userId) + "_" + String.valueOf(documentId) + ".pdf";
-        File textPdfFile = convertStringToPdf(sttResult, sttFileName);
-
-        String contentType = "application/pdf";
-        String originalFilename = textPdfFile.getName();
-        String name = textPdfFile.getName();
-
-        FileInputStream fileInputStream = new FileInputStream(textPdfFile);
-        MultipartFile multipartFile = new MockMultipartFile(name, originalFilename, contentType, fileInputStream);
-        S3Dto s3DtoForSTT = new S3Dto(multipartFile, documentId, userId, "pdf");
-        String textPdfPath = awsS3Uploader.uploadTextPdfFile(s3DtoForSTT);
-
-        sseService.notifyKeywords(documentId, textPdfPath);
-        sseService.notifySummary(documentId, textPdfPath);
-
-//        ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestSTTKeywords(textPdfPath);
-//        List<String> keywords = keywordService.renewKeywords(responseEntity, documentId); // update
-//
-//        // 요약본 요청
-//        ResponseEntity<SummaryDto> summary = requestService.requestSTTSummary(sttResult);
-//        summaryService.updateSummary(documentId, summary.getBody().getSummary()); // update
-//        UploadDto uploadDto = new UploadDto(keywords, data);
+        sseService.notifySTT(documentId, path, userId);
 
         whiteboardService.setDataType(documentId, "audio");
 
