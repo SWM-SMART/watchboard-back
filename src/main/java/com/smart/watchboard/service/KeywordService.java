@@ -88,6 +88,12 @@ public class KeywordService {
         keywordRepository.save(updatedKeyword);
     }
 
+    public Keyword findKeywords(Long documentId) {
+        Optional<Keyword> keyword = keywordRepository.findByDocumentId(documentId);
+
+        return keyword.orElse(null);
+    }
+
     public void deleteAllKeywords(Keyword keyword) {
         keywordRepository.delete(keyword);
     }
