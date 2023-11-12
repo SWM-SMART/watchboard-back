@@ -43,8 +43,8 @@ public class AudioFileController {
     private final FileService fileService;
     private final MindmapService mindmapService;
     private final WhiteboardService whiteboardService;
-    private final KeywordService keywordService;
     private final JwtService jwtService;
+    private final SseService sseService;
 
     @PostMapping("/{documentID}/audio")
     public ResponseEntity<?> uploadAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audio") MultipartFile audioFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException, DocumentException {
@@ -74,19 +74,22 @@ public class AudioFileController {
         List<SttData> data = sttService.getSTTData(sttResponseEntity);
         lectureNoteService.createLectureNote(documentId, data, sttResult);
 
-        ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestSTTKeywords(textPdfPath);
-        List<String> keywords = keywordService.createKeywords(responseEntity, documentId);
+//        ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestSTTKeywords(textPdfPath);
+//        List<String> keywords = keywordService.createKeywords(responseEntity, documentId);
+//
+//        // 요약본 요청
+//        ResponseEntity<SummaryDto> summary = requestService.requestSTTSummary(textPdfPath);
+//        summaryService.createSummary(documentId, summary.getBody().getSummary());
+        sseService.notifyKeywords(documentId, textPdfPath);
+        sseService.notifySummary(documentId, textPdfPath);
 
-        // 요약본 요청
-        ResponseEntity<SummaryDto> summary = requestService.requestSTTSummary(textPdfPath);
-        summaryService.createSummary(documentId, summary.getBody().getSummary());
 
-        UploadDto uploadDto = new UploadDto(keywords, data);
+        //UploadDto uploadDto = new UploadDto(keywords, data);
 
         whiteboardService.setDataType(documentId, "audio");
 
         // 응답 키워드, stt
-        return new ResponseEntity<>(uploadDto, HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PutMapping("/{documentID}/audio")
@@ -116,17 +119,20 @@ public class AudioFileController {
         S3Dto s3DtoForSTT = new S3Dto(multipartFile, documentId, userId, "pdf");
         String textPdfPath = awsS3Uploader.uploadTextPdfFile(s3DtoForSTT);
 
-        ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestSTTKeywords(textPdfPath);
-        List<String> keywords = keywordService.renewKeywords(responseEntity, documentId); // update
+        sseService.notifyKeywords(documentId, textPdfPath);
+        sseService.notifySummary(documentId, textPdfPath);
 
-        // 요약본 요청
-        ResponseEntity<SummaryDto> summary = requestService.requestSTTSummary(sttResult);
-        summaryService.updateSummary(documentId, summary.getBody().getSummary()); // update
-        UploadDto uploadDto = new UploadDto(keywords, data);
+//        ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestSTTKeywords(textPdfPath);
+//        List<String> keywords = keywordService.renewKeywords(responseEntity, documentId); // update
+//
+//        // 요약본 요청
+//        ResponseEntity<SummaryDto> summary = requestService.requestSTTSummary(sttResult);
+//        summaryService.updateSummary(documentId, summary.getBody().getSummary()); // update
+//        UploadDto uploadDto = new UploadDto(keywords, data);
 
         whiteboardService.setDataType(documentId, "audio");
 
-        return new ResponseEntity<>(uploadDto, HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @DeleteMapping("/{documentID}/audio")

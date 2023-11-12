@@ -27,11 +27,9 @@ import java.util.Optional;
 public class LearningFileController {
     private final AwsS3Uploader awsS3Uploader;
     private final FileService fileService;
-    private final RequestService requestService;
     private final WhiteboardService whiteboardService;
-    private final SummaryService summaryService;
-    private final KeywordService keywordService;
     private final JwtService jwtService;
+    private final SseService sseService;
 
     @PostMapping("/{documentID}/pdf")
     public ResponseEntity<?> uploadLearningFile(@PathVariable(value = "documentID") long documentId, @RequestParam("pdf") MultipartFile pdfFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException {
@@ -40,14 +38,17 @@ public class LearningFileController {
 
         S3Dto s3Dto = new S3Dto(pdfFile, documentId, userId, "pdf");
         String path = awsS3Uploader.uploadFile(s3Dto);
-        ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestPdfKeywords(path);
-        keywordService.createKeywords(responseEntity, documentId);
-
-        ResponseEntity<SummaryDto> summary = requestService.requestPdfSummary(path);
-        summaryService.createSummary(documentId, summary.getBody().getSummary());
+        sseService.notifyKeywords(documentId, path);
+        sseService.notifySummary(documentId, path);
+//        ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestPdfKeywords(path);
+//        keywordService.createKeywords(responseEntity, documentId);
+//
+//        ResponseEntity<SummaryDto> summary = requestService.requestPdfSummary(path);
+//        summaryService.createSummary(documentId, summary.getBody().getSummary());
         whiteboardService.setDataType(documentId, "pdf");
 
-        return new ResponseEntity<>(responseEntity.getBody(), HttpStatus.OK);
+        //return new ResponseEntity<>(responseEntity.getBody(), HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PutMapping("/{documentID}/pdf")
@@ -57,14 +58,16 @@ public class LearningFileController {
 
         S3Dto s3Dto = new S3Dto(pdfFile, documentId, userId, "pdf");
         String path = awsS3Uploader.uploadFile(s3Dto);
-        ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestPdfKeywords(path);
-        keywordService.renewKeywords(responseEntity, documentId);
-
-        ResponseEntity<SummaryDto> summary = requestService.requestPdfSummary(path);
-        summaryService.updateSummary(documentId, summary.getBody().getSummary());
+        sseService.notifyKeywords(documentId, path);
+        sseService.notifySummary(documentId, path);
+//        ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestPdfKeywords(path);
+//        keywordService.renewKeywords(responseEntity, documentId);
+//
+//        ResponseEntity<SummaryDto> summary = requestService.requestPdfSummary(path);
+//        summaryService.updateSummary(documentId, summary.getBody().getSummary());
         whiteboardService.setDataType(documentId, "pdf");
 
-        return new ResponseEntity<>(responseEntity.getBody(), HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @DeleteMapping("/{documentID}/pdf")
