@@ -2,6 +2,7 @@ package com.smart.watchboard.service;
 
 import com.itextpdf.text.DocumentException;
 import com.smart.watchboard.common.support.AwsS3Uploader;
+import com.smart.watchboard.domain.Document;
 import com.smart.watchboard.domain.Note;
 import com.smart.watchboard.domain.SttData;
 import com.smart.watchboard.dto.*;
@@ -103,14 +104,25 @@ public class SseService {
         SseEmitter emitter = emitterRepository.get(documentId);
         if (emitter != null) {
             try {
-                ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestSTTKeywords(path);
-                //List<String> keywords = keywordService.createKeywords(responseEntity, documentId);
-                if (keywordService.findKeywords(documentId) == null) {
-                    keywordService.createKeywords(responseEntity, documentId);
+                Document document = whiteboardService.findDoc(documentId);
+                ResponseEntity<KeywordsBodyDto> responseEntity;
+                if (document.getDataType().equals("pdf")) {
+                    responseEntity = requestService.requestPdfKeywords(path);
+                    if (keywordService.findKeywords(documentId) == null) {
+                        keywordService.createKeywords(responseEntity, documentId);
+                    } else {
+                        keywordService.renewKeywords(responseEntity, documentId);
+                    }
+                    emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("keywords").data(responseEntity.getBody().getKeywords()));
                 } else {
-                    keywordService.renewKeywords(responseEntity, documentId);
+                    responseEntity = requestService.requestSTTKeywords(path);
+                    if (keywordService.findKeywords(documentId) == null) {
+                        keywordService.createKeywords(responseEntity, documentId);
+                    } else {
+                        keywordService.renewKeywords(responseEntity, documentId);
+                    }
+                    emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("keywords").data(responseEntity.getBody().getKeywords()));
                 }
-                emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("keywords").data(responseEntity.getBody().getKeywords()));
             } catch (IOException exception) {
                 emitterRepository.deleteById(documentId);
                 emitter.completeWithError(exception);
