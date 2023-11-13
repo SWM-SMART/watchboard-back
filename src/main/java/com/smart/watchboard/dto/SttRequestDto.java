@@ -6,9 +6,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class SttRequestDto {
-    private String audioUrl;
+    private String key;
 
-    public SttRequestDto(String audioUrl) {
-        this.audioUrl = audioUrl;
+    public SttRequestDto(String key) {
+        this.key = key;
     }
 }
