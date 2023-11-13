@@ -3,9 +3,6 @@ package com.smart.watchboard.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.itextpdf.text.DocumentException;
 import com.smart.watchboard.common.support.AwsS3Uploader;
-import com.smart.watchboard.domain.Document;
-import com.smart.watchboard.domain.LectureNote;
-import com.smart.watchboard.domain.Note;
 import com.smart.watchboard.domain.SttData;
 import com.smart.watchboard.dto.*;
 import com.smart.watchboard.service.*;
@@ -14,19 +11,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static com.smart.watchboard.common.support.PdfConverter.convertStringToPdf;
 
 @RestController
 @RequestMapping("/documents")
@@ -102,6 +94,12 @@ public class AudioFileController {
         String body = """
                 {"keywords":["eatssss","food","today"]}
                 """;
+        String path = "https://watchboard-record-bucket.s3.ap-northeast-2.amazonaws.com/audio/mp4/26.1.m4a";
+        ResponseEntity<String> responseEntity = sttService.getSTT(path);
+        //System.out.println(responseEntity.getBody().toString());
+        List<SttData> sttData = sttService.getSTTData(responseEntity);
+        String text = sttService.getText(responseEntity);
+        System.out.println(text);
 //        String sttResult = "안녕하세요 Hello!!!!";
 //        String sttFileName = "sttResult.pdf";
 //        File textPdfFile = convertStringToPdf(sttResult, sttFileName);
@@ -115,10 +113,11 @@ public class AudioFileController {
 //        S3Dto s3Dto = new S3Dto(multipartFile, 26L);
 //        String path = awsS3Uploader.uploadTextPdfFile(s3Dto);
 //        System.out.println(path);
-        String path = "https://s3.ap-northeast-2.amazonaws.com/watchboard-record-bucket/application/pdf/감정분류.pdf";
-        ResponseEntity<SummaryDto> responseEntity = requestService.requestPdfSummary(path);
-        System.out.println(responseEntity.getBody().getSummary());
-        return new ResponseEntity<>(HttpStatus.OK);
+
+//        String path = "https://s3.ap-northeast-2.amazonaws.com/watchboard-record-bucket/application/pdf/감정분류.pdf";
+//        ResponseEntity<SummaryDto> responseEntity = requestService.requestPdfSummary(path);
+//        System.out.println(responseEntity.getBody().getSummary());
+        return new ResponseEntity<>(responseEntity.getBody(), HttpStatus.OK);
     }
 
 }
