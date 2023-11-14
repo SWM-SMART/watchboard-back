@@ -23,7 +23,8 @@ public class WhiteboardService {
         String extractedAccessToken = jwtService.extractAccessToken(accessToken);
         Optional<Long> userId = jwtService.extractUserId(extractedAccessToken);
 
-        List<Document> documents = documentRepository.findDocumentsByUserId(userId.get());
+        User user = userRepository.findById(userId).orElse(null);
+        List<Document> documents = documentRepository.findByUserAndIsDeletedFalse(user);
         List<DocumentDto> documentDtos = new ArrayList<>();
         for (Document document : documents) {
             documentDtos.add(new DocumentDto(document.getDocumentId(), document.getDocumentName(), document.getCreatedAt(), document.getModifiedAt()));
