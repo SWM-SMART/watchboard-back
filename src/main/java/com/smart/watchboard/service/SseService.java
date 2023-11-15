@@ -64,13 +64,13 @@ public class SseService {
         if (emitter != null) {
             try {
                 if (whiteboardService.isPdfType(documentId)) {
-                    String path = fileService.getPdfUrl(documentId);
+                    String path = fileService.getPath(documentId);
                     ResponseEntity<MindmapResponseDto> body = requestService.requestPdfMindmap(path, documentId, keywords);
-                    emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("mindmap").data(body.getBody()));
+                    emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("mindmap"));
                 } else if (whiteboardService.isAudioType(documentId)) {
                     Note note = noteService.findByDocument(documentId);
                     ResponseEntity<MindmapResponseDto> body = requestService.requestSTTMindmap(note.getPath(), documentId, keywords);
-                    emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("mindmap").data(body.getBody()));
+                    emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("mindmap"));
                 }
             } catch (IOException exception) {
                 emitterRepository.deleteById(documentId);
@@ -113,7 +113,8 @@ public class SseService {
                     } else {
                         keywordService.renewKeywords(responseEntity, documentId);
                     }
-                    emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("keywords").data(responseEntity.getBody().getKeywords()));
+                    sendToClient(documentId, responseEntity.getBody().getKeywords());
+                    emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("keywords"));
                 } else {
                     responseEntity = requestService.requestSTTKeywords(path);
                     if (keywordService.findKeywords(documentId) == null) {
@@ -121,7 +122,8 @@ public class SseService {
                     } else {
                         keywordService.renewKeywords(responseEntity, documentId);
                     }
-                    emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("keywords").data(responseEntity.getBody().getKeywords()));
+                    sendToClient(documentId, responseEntity.getBody().getKeywords());
+                    emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("keywords"));
                 }
             } catch (IOException exception) {
                 emitterRepository.deleteById(documentId);
@@ -141,8 +143,6 @@ public class SseService {
                 } else {
                     summaryService.updateSummary(documentId, summary.getBody().getSummary());
                 }
-
-                //emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("summary").data(summary.getBody().getSummary()));
             } catch (IOException exception) {
                 emitterRepository.deleteById(documentId);
                 emitter.completeWithError(exception);
@@ -155,7 +155,7 @@ public class SseService {
         if (emitter != null) {
             try {
                 ResponseEntity<AnswerDto> responseEntity = requestService.requestAnswer(documentId, keywordLabel);
-                emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("answer").data(responseEntity.getBody()));
+                emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("answer"));
             } catch (IOException exception) {
                 emitterRepository.deleteById(documentId);
                 emitter.completeWithError(exception);
@@ -190,7 +190,7 @@ public class SseService {
                 notifyKeywords(documentId, textPdfPath);
                 notifySummary(documentId, textPdfPath);
 
-                emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("audio").data(sttDataDto));
+                emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("audio"));
             } catch (IOException | DocumentException exception) {
                 emitterRepository.deleteById(documentId);
                 emitter.completeWithError(exception);
@@ -224,7 +224,7 @@ public class SseService {
                 notifyKeywords(documentId, textPdfPath);
                 notifySummary(documentId, textPdfPath);
 
-                emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("audio").data(sttDataDto));
+                emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("audio"));
             } catch (IOException | DocumentException exception) {
                 emitterRepository.deleteById(documentId);
                 emitter.completeWithError(exception);
