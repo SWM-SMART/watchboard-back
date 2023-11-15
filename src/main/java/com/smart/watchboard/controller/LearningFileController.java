@@ -16,6 +16,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import static com.smart.watchboard.common.support.PdfConverter.checkPageLimit;
@@ -45,8 +47,8 @@ public class LearningFileController {
 
         S3Dto s3Dto = new S3Dto(pdfFile, documentId, userId, "pdf");
         String path = awsS3Uploader.uploadFile(s3Dto);
-        sseService.notifyKeywords(documentId, path);
-        sseService.notifySummary(documentId, path);
+        //sseService.notifyKeywords(documentId, path);
+        //sseService.notifySummary(documentId, path);
 //        ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestPdfKeywords(path);
 //        keywordService.createKeywords(responseEntity, documentId);
 //
@@ -90,24 +92,24 @@ public class LearningFileController {
 
     @GetMapping("/{documentID}/pdf")
     public ResponseEntity<?> getLearningFile(@PathVariable(value = "documentID") long documentId, @RequestHeader("Authorization") String accessToken) {
-        String body = fileService.getPdfUrl(documentId);
+        PdfUrlDto body = fileService.getPdfUrl(documentId);
         ResponseEntity<?> responseEntity = new ResponseEntity<>(body, HttpStatus.OK);
 
         return responseEntity;
     }
 
     @PostMapping("/test")
-    public ResponseEntity<?> test(@RequestHeader("Authorization") String accessToken, @RequestParam("pdf") MultipartFile pdfFile) throws IOException {
+    public ResponseEntity<?> test(@RequestHeader("Authorization") String accessToken) throws IOException {
 //        Optional<Long> id = jwtService.extractUserId(accessToken);
 //        Long userId = id.orElse(null);
 //
 //        S3Dto s3Dto = new S3Dto(pdfFile, 11L, userId, "pdf");
 //        String path = awsS3Uploader.uploadFile(s3Dto);
 
-        String path = "https://watchboard-record-bucket.s3.ap-northeast-2.amazonaws.com/application/pdf/36.감정분류.pdf";
-        ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestPdfKeywords(path);
+        //String path = "https://watchboard-record-bucket.s3.ap-northeast-2.amazonaws.com/application/pdf/36.감정분류.pdf";
+        //ResponseEntity<KeywordsBodyDto> responseEntity = requestService.requestPdfKeywords(path);
 
-        ResponseEntity<MindmapResponseDto> responseEntity1 = requestService.requestPdfMindmap(path, 36L, responseEntity.getBody().getKeywords());
+        //ResponseEntity<MindmapResponseDto> responseEntity1 = requestService.requestPdfMindmap(path, 36L, responseEntity.getBody().getKeywords());
 
 //// PDF 파일 읽기
 //        PdfReader reader = new PdfReader(pdfFile);
@@ -139,8 +141,10 @@ public class LearningFileController {
         //mindmapService.createMindmap(entity, 11L, "pdf");
         //String body = fileService.getPdfUrl(4L);
         //System.out.println(body);
+        String filePath = "https://watchboard-record-bucket.s3.ap-northeast-2.amazonaws.com/application/pdf/36.감정분류.pdf";
+        ResponseEntity<SummaryDto> responseEntity = requestService.requestPdfSummary(filePath);
 
-        return new ResponseEntity<>(responseEntity1, HttpStatus.OK);
+        return new ResponseEntity<>(responseEntity, HttpStatus.OK);
 
     }
 }
