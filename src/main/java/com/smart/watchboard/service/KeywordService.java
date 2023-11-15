@@ -27,26 +27,25 @@ public class KeywordService {
     private final WhiteboardService whiteboardService;
     private final KeywordRepository keywordRepository;
 
-    public List<String> createKeywords(ResponseEntity<KeywordsBodyDto> responseEntity, Long documentId) throws JsonProcessingException {
+    public void createKeywords(ResponseEntity<KeywordsBodyDto> responseEntity, Long documentId) throws JsonProcessingException {
         Document document = whiteboardService.findDoc(documentId);
-        // 마인드맵 생성
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = objectMapper.readTree(responseEntity.getBody().getKeywords().toString());
-        JsonNode keywordsNode = jsonNode.get("keywords");
-        List<String> keywords = objectMapper.convertValue(keywordsNode, new TypeReference<List<String>>() {});
+//        ObjectMapper objectMapper = new ObjectMapper();
+//        JsonNode jsonNode = objectMapper.readTree(responseEntity.getBody().getKeywords().toString());
+//        JsonNode keywordsNode = jsonNode.get("keywords");
+//        List<String> keywords = objectMapper.convertValue(keywordsNode, new TypeReference<List<String>>() {});
 
         Keyword keyword = Keyword.builder()
                 .documentId(documentId)
-                .keywords(keywords)
+                .keywords(responseEntity.getBody().getKeywords())
                 .build();
 
         keywordRepository.save(keyword);
 
-        return keywords;
+        //return keywords;
     }
 
-    public List<String> renewKeywords(ResponseEntity<KeywordsBodyDto> responseEntity, Long documentId) throws JsonProcessingException {
+    public void renewKeywords(ResponseEntity<KeywordsBodyDto> responseEntity, Long documentId) throws JsonProcessingException {
         Document document = whiteboardService.findDoc(documentId);
         // 마인드맵 생성
         Optional<Keyword> keyword = keywordRepository.findByDocumentId(documentId);
@@ -57,22 +56,20 @@ public class KeywordService {
                 .build();
         deleteAllKeywords(formerKeyword);
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = objectMapper.readTree(responseEntity.getBody().getKeywords().toString());
-        JsonNode keywordsNode = jsonNode.get("keywords");
-        List<String> keywords = objectMapper.convertValue(keywordsNode, new TypeReference<List<String>>() {});
+//        ObjectMapper objectMapper = new ObjectMapper();
+//        JsonNode jsonNode = objectMapper.readTree(responseEntity.getBody().getKeywords().toString());
+//        JsonNode keywordsNode = jsonNode.get("keywords");
+//        List<String> keywords = objectMapper.convertValue(keywordsNode, new TypeReference<List<String>>() {});
 
         Keyword newKeyword = Keyword.builder()
                 .documentId(documentId)
-                .keywords(keywords)
+                .keywords(responseEntity.getBody().getKeywords())
                 .build();
 
         keywordRepository.save(newKeyword);
-
-        return keywords;
     }
 
-    public void updateKeywords(KeywordsDto keywordsDto, Long documentId) {
+    public Keyword updateKeywords(KeywordsDto keywordsDto, Long documentId) {
         Optional<Keyword> keyword = keywordRepository.findByDocumentId(documentId);
         List<String> keywords = keyword.get().getKeywords();
         List<String> addKeywords = keywordsDto.getAdd();
@@ -86,6 +83,7 @@ public class KeywordService {
         updatedKeyword.setKeywords(newKeywords);
 
         keywordRepository.save(updatedKeyword);
+        return updatedKeyword;
     }
 
     public Keyword findKeywords(Long documentId) {
