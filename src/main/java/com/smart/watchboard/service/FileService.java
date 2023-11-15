@@ -8,6 +8,7 @@ import com.smart.watchboard.domain.Document;
 import com.smart.watchboard.domain.File;
 import com.smart.watchboard.domain.SttData;
 import com.smart.watchboard.dto.FileDto;
+import com.smart.watchboard.dto.PdfUrlDto;
 import com.smart.watchboard.dto.SttDto;
 import com.smart.watchboard.repository.FileRepository;
 import jakarta.transaction.Transactional;
@@ -86,15 +87,16 @@ public class FileService {
         return file;
     }
 
-    public String getPdfUrl(Long documentId) {
+    public PdfUrlDto getPdfUrl(Long documentId) {
         Document document = whiteboardService.findDoc(documentId);
         File file = fileRepository.findByDocument(document);
-        String body = """
-                {
-                    "url": %s
-                }
-                """.formatted(file.getPath());
-        return body;
+        PdfUrlDto pdfUrlDto = new PdfUrlDto(file.getPath());
+//        String body = """
+//                {
+//                    "url": %s
+//                }
+//                """.formatted(file.getPath());
+        return pdfUrlDto;
     }
 
 //    public String createResponseBody2(ResponseEntity<String> keywordResponseEntity, String text) throws JsonProcessingException {
