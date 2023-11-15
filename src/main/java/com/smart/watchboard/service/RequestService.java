@@ -214,10 +214,10 @@ public class RequestService {
 
         String requestBody = """
                 {
-                  "summary": "%s",
-                  "text": "%s"
+                  "keyword": "%s",
+                  "summary": "%s"
                 }
-                """.formatted(summary.getContent(), keywordLabel);
+                """.formatted(keywordLabel, summary.getContent());
         HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
 
         ResponseEntity<AnswerDto> responseEntity = restTemplate.exchange(url, HttpMethod.POST, requestEntity, AnswerDto.class);
