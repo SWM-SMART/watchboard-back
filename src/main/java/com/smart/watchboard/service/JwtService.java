@@ -199,7 +199,7 @@ public class JwtService {
     public ResponseCookie deleteCookieRefreshToken() {
         ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
                 .maxAge(0)
-                .path("/")
+                .path("/users/token")
                 .secure(true)
                 .sameSite("None")
                 .httpOnly(true)
