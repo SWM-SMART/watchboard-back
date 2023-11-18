@@ -1,16 +1,17 @@
 package com.smart.watchboard.common.support;
 
-import com.itextpdf.text.Document;
-import com.itextpdf.text.DocumentException;
-import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.PdfWriter;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class PdfConverter {
     public static File convertStringToPdf(String content, String fileName) throws DocumentException, IOException {
@@ -18,9 +19,12 @@ public class PdfConverter {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
         try {
+            BaseFont objBaseFont = BaseFont.createFont("src/main/resources/templates/NanumGothic.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+            Font objFont = new Font(objBaseFont, 12);
+            //Font koreanFont = FontFactory.getFont("NanumGothic", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
             PdfWriter.getInstance(document, byteArrayOutputStream);
             document.open();
-            document.add(new Paragraph(content));
+            document.add(new Paragraph(content, objFont));
         } finally {
             document.close();
         }
@@ -31,11 +35,9 @@ public class PdfConverter {
 
     public static File saveByteArrayToFile(byte[] bytes, String fileName) throws IOException {
         File outputFile = new File(fileName);
-        System.out.println(outputFile.getName());
         try (FileOutputStream fos = new FileOutputStream(outputFile)) {
             fos.write(bytes);
         }
-        System.out.println(outputFile);
         return outputFile;
     }
 
