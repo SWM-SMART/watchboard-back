@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.view.RedirectView;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -24,31 +25,37 @@ public class AuthController {
 
     private final JwtService jwtService;
 
-    @GetMapping("/users/auth/kakao/callback")
-    @Operation(summary = "카카오 로그인", description = "인가코드를 받아 이후 작업을 진행하고 로그인을 완료한다.")
-    public ResponseEntity<?> oauthLoginCallback(@RequestParam("code") String code) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setLocation(URI.create("/"));
-
-        List<ResponseCookie> cookies = new ArrayList<>();
-        cookies.add(ResponseCookie.from("accessToken", "asdasdqweqwe")
-                .httpOnly(true)
-                .secure(true)
-                .path("/")
-                .build());
-        cookies.add(ResponseCookie.from("refreshToken", "asdklj123")
-                .httpOnly(true)
-                .secure(true)
-                .path("/")
-                .build());
-
-        // 쿠키들을 하나씩 HttpHeaders에 추가
-        for (ResponseCookie cookie : cookies) {
-            headers.add(HttpHeaders.SET_COOKIE, cookie.toString());
-        }
-
-        return new ResponseEntity<>(headers, HttpStatus.MOVED_PERMANENTLY);
-    }
+//    @GetMapping("/users/auth/kakao/callback")
+//    @Operation(summary = "카카오 로그인", description = "인가코드를 받아 이후 작업을 진행하고 로그인을 완료한다.")
+//    public RedirectView oauthLoginCallback(@RequestParam("code") String code) {
+//        RedirectView redirectView = new RedirectView();
+//        redirectView.setUrl("https://watchboard.me");
+//        redirectView.setStatusCode(HttpStatus.FOUND);
+//
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.setLocation(URI.create("/"));
+//
+//        List<ResponseCookie> cookies = new ArrayList<>();
+//        cookies.add(ResponseCookie.from("accessToken", "asdasdqweqwe")
+//                .httpOnly(true)
+//                .secure(true)
+//                .path("/")
+//                .build());
+//        cookies.add(ResponseCookie.from("refreshToken", "asdklj123")
+//                .httpOnly(true)
+//                .secure(true)
+//                .path("/")
+//                .build());
+//
+//        // 쿠키들을 하나씩 HttpHeaders에 추가
+//        for (ResponseCookie cookie : cookies) {
+//            headers.add(HttpHeaders.SET_COOKIE, cookie.toString());
+//        }
+//        return redirectView;
+//
+//        //return new ResponseEntity<>(headers, HttpStatus.MOVED_PERMANENTLY);
+//
+//    }
 
     @GetMapping("/users/token")
     @Operation(summary = "로그인 후 토큰 전달", description = "로그인 후 request로 받은 리프레시 토큰 검증 후 액세스 토큰과 리프레시 토큰 전달")
@@ -62,9 +69,9 @@ public class AuthController {
     @Operation(summary = "로그아웃", description = "로그아웃을 위해 refreshToken 쿠키 만료")
     public ResponseEntity<?> logout(@RequestHeader("Authorization") String accessToken) {
         HttpHeaders headers = jwtService.createHeaderWithDeletedCookie(accessToken);
-        headers.setLocation(URI.create("/"));
+        //headers.setLocation(URI.create("/"));
 
-        return new ResponseEntity<>(headers, HttpStatus.FOUND);
+        return new ResponseEntity<>(headers, HttpStatus.OK);
     }
 
 }

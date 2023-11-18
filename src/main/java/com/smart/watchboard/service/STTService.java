@@ -29,7 +29,7 @@ public class STTService {
 
     public ResponseEntity<String> getSTT(String path) throws JsonProcessingException {
         String url = aiUrl + "/stt";
-        int startIndex = path.indexOf("audio/mp3/") + "audio/mp3/".length();
+        int startIndex = path.indexOf("audio/mpeg/") + "audio/mpeg/".length();
         String fileName = path.substring(startIndex);
 
         RestTemplate restTemplate = new RestTemplate();

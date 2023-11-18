@@ -11,13 +11,20 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
+
+import static com.smart.watchboard.common.support.PdfConverter.*;
 
 
 @RestController
@@ -29,7 +36,7 @@ public class AudioFileController {
     private final AwsS3Uploader awsS3Uploader;
     private final NoteService noteService;
     private final LectureNoteService lectureNoteService;
-    private final RequestService requestService;
+    //private final RequestService requestService;
     private final STTService sttService;
     private final SummaryService summaryService;
     private final FileService fileService;
@@ -91,33 +98,55 @@ public class AudioFileController {
 
     @PostMapping("/testffff")
     public ResponseEntity<?> test(@RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException, DocumentException {
-        String body = """
-                {"keywords":["eatssss","food","today"]}
-                """;
-        String path = "https://watchboard-record-bucket.s3.ap-northeast-2.amazonaws.com/audio/mp4/26.1.m4a";
-        ResponseEntity<String> responseEntity = sttService.getSTT(path);
-        //System.out.println(responseEntity.getBody().toString());
-        List<SttData> sttData = sttService.getSTTData(responseEntity);
-        String text = sttService.getText(responseEntity);
-        System.out.println(text);
-//        String sttResult = "안녕하세요 Hello!!!!";
-//        String sttFileName = "sttResult.pdf";
-//        File textPdfFile = convertStringToPdf(sttResult, sttFileName);
-//        String contentType = "application/pdf";
-//        String originalFilename = textPdfFile.getName();
-//        String name = textPdfFile.getName();
-//
-//
-//        FileInputStream fileInputStream = new FileInputStream(textPdfFile);
-//        MultipartFile multipartFile = new MockMultipartFile(name, originalFilename, contentType, fileInputStream);
-//        S3Dto s3Dto = new S3Dto(multipartFile, 26L);
-//        String path = awsS3Uploader.uploadTextPdfFile(s3Dto);
-//        System.out.println(path);
+//        String body = """
+//                {"keywords":["eatssss","food","today"]}
+//                """;
+//        String path = "https://watchboard-record-bucket.s3.ap-northeast-2.amazonaws.com/audio/mp4/26.1.m4a";
+//        ResponseEntity<String> responseEntity = sttService.getSTT(path);
+//        //System.out.println(responseEntity.getBody().toString());
+//        List<SttData> sttData = sttService.getSTTData(responseEntity);
+//        String text = sttService.getText(responseEntity);
+//        System.out.println(text);
+        String sttResult = "안녕하세요 Hello!!!!";
+        String sttFileName = "sttResult.pdf";
+        File textPdfFile = convertStringToPdf(sttResult, sttFileName);
+        String contentType = "application/pdf";
+        String originalFilename = textPdfFile.getName();
+        String name = textPdfFile.getName();
+
+
+        FileInputStream fileInputStream = new FileInputStream(textPdfFile);
+        MultipartFile multipartFile = new MockMultipartFile(name, originalFilename, contentType, fileInputStream);
+        S3Dto s3Dto = new S3Dto(multipartFile, 26L, 7L, "pdf");
+        String path = awsS3Uploader.uploadTextPdfFile(s3Dto);
+        System.out.println(path);
 
 //        String path = "https://s3.ap-northeast-2.amazonaws.com/watchboard-record-bucket/application/pdf/감정분류.pdf";
 //        ResponseEntity<SummaryDto> responseEntity = requestService.requestPdfSummary(path);
 //        System.out.println(responseEntity.getBody().getSummary());
-        return new ResponseEntity<>(responseEntity.getBody(), HttpStatus.OK);
+
+//        String sttResult = "안녕하세요";
+//        String sttFileName = "hello" + ".txt";
+//        File textFile = createTextFile(sttResult, sttFileName);
+//        String contentType = "text/plain";
+//        String originalFilename = textFile.getName();
+//        String name = textFile.getName();
+//
+//        FileInputStream fileInputStream = new FileInputStream(textFile);
+//        MultipartFile multipartFile = createMockMultipartFile(name, originalFilename, textFile);
+//        //MultipartFile multipartFile = new MockMultipartFile(name, originalFilename, contentType, fileInputStream);
+//        //System.out.println(multipartFile.getInputStream().read());
+//        S3Dto s3DtoForSTT = new S3Dto(multipartFile, 26L, 7L, "txt");
+//        String textPdfPath = awsS3Uploader.uploadTextPdfFile(s3DtoForSTT);
+//        System.out.println(textPdfPath);
+//        try (InputStream inputStream = multipartFile.getInputStream()) {
+//            // InputStream에서 데이터를 읽어와서 콘솔에 출력
+//            int byteRead;
+//            while ((byteRead = inputStream.read()) != -1) {
+//                System.out.print((char) byteRead);
+//            }
+//        }
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
 }
