@@ -156,7 +156,7 @@ public class SseService {
     private void sendAnswer(Long documentId, String keyword) {
         AnswerDto answerDto = questionService.getAnswer(documentId, keyword);
         if (answerDto == null) {
-            answerDto.setText("processing");
+            answerDto = new AnswerDto("processing");
             ResponseEntity<AnswerDto> temp = new ResponseEntity<>(answerDto, HttpStatus.OK);
             questionService.createAnswer(documentId, keyword, temp);
         }
