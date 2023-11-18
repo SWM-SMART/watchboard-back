@@ -1,6 +1,7 @@
 package com.smart.watchboard.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.smart.watchboard.domain.Answer;
 import com.smart.watchboard.domain.Document;
 import com.smart.watchboard.domain.Keyword;
 import com.smart.watchboard.dto.AnswerDto;
@@ -37,6 +38,7 @@ public class GraphController {
     private final SseService sseService;
     private final KeywordService keywordService;
     private final JwtService jwtService;
+    private final QuestionService questionService;
     @PostMapping("/graph/{documentID}")
     @Operation(summary = "마인드맵 생성", description = "ai 서버에 마인드맵 요청한다.")
     public void createMindmap(@PathVariable(value = "documentID") long documentId, @RequestBody KeywordsBodyDto keywordsBodyDto, @RequestHeader("Authorization") String accessToken) throws JsonProcessingException {
@@ -94,11 +96,14 @@ public class GraphController {
 
     @GetMapping("/documents/{documentID}/mindmap/keyword/{keywordLabel}")
     @Operation(summary = "키워드 질문", description = "키워드 AI에 질문")
-    public ResponseEntity<?> getAnswer(@PathVariable(value = "documentID") long documentId, @PathVariable String keywordLabel, @RequestHeader("Authorization") String accessToken) throws JsonProcessingException {
-        //ResponseEntity<AnswerDto> responseEntity = requestService.requestAnswer(documentId, keywordLabel);
-        sseService.notifyAnswer(documentId, keywordLabel);
+    public ResponseEntity<AnswerDto> getAnswer(@PathVariable(value = "documentID") long documentId, @PathVariable String keywordLabel, @RequestHeader("Authorization") String accessToken) throws JsonProcessingException {
+        AnswerDto answerDto = questionService.getAnswer(documentId, keywordLabel);
+        if (answerDto == null) {
+            sseService.notifyAnswer(documentId, keywordLabel);
+            return new ResponseEntity<>(HttpStatus.ACCEPTED);
+        }
 
-        return new ResponseEntity<>(HttpStatus.OK);
+        return new ResponseEntity<>(answerDto, HttpStatus.OK);
     }
 
     @GetMapping(value = "documents/{documentID}/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
