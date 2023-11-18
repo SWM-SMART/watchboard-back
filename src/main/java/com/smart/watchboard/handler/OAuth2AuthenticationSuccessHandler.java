@@ -35,7 +35,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
                 String refreshToken = jwtService.createRefreshToken(oAuth2User.getUserId());
                 ResponseCookie cookie = jwtService.setCookieRefreshToken(refreshToken);
                 response.setHeader("Set-Cookie", cookie.toString());
-                response.sendRedirect("oauth2/sign-up"); // 추후 수정
+                response.sendRedirect("https://4988-221-148-248-129.ngrok-free.app"); // 추후 수정
                 User findUser = userRepository.findByEmail(oAuth2User.getEmail())
                         .orElseThrow(() -> new IllegalArgumentException("이메일에 해당하는 유저가 없습니다."));
                 findUser.authorizeUser();
