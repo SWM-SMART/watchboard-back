@@ -8,6 +8,7 @@ import com.smart.watchboard.domain.SttData;
 import com.smart.watchboard.dto.*;
 import com.smart.watchboard.repository.EmitterRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 
 import static com.smart.watchboard.common.support.PdfConverter.convertStringToPdf;
@@ -35,6 +37,7 @@ public class SseService {
     private final SummaryService summaryService;
     private final STTService sttService;
     private final AwsS3Uploader awsS3Uploader;
+    private final QuestionService questionService;
 
     public SseEmitter subscribe(Long documentId) {
         SseEmitter emitter = createEmitter(documentId);
@@ -66,11 +69,11 @@ public class SseService {
                 if (whiteboardService.isPdfType(documentId)) {
                     String path = fileService.getPath(documentId);
                     ResponseEntity<MindmapResponseDto> body = requestService.requestPdfMindmap(path, documentId, keywords);
-                    emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("mindmap"));
+                    emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("mindmap").data("mindmap"));
                 } else if (whiteboardService.isAudioType(documentId)) {
                     Note note = noteService.findByDocument(documentId);
                     ResponseEntity<MindmapResponseDto> body = requestService.requestSTTMindmap(note.getPath(), documentId, keywords);
-                    emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("mindmap"));
+                    emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("mindmap").data("mindmap"));
                 }
             } catch (IOException exception) {
                 emitterRepository.deleteById(documentId);
@@ -113,8 +116,8 @@ public class SseService {
                     } else {
                         keywordService.renewKeywords(responseEntity, documentId);
                     }
+                    emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("keywords").data("keywords"));
                     sendToClient(documentId, responseEntity.getBody().getKeywords());
-                    emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("keywords"));
                 } else {
                     responseEntity = requestService.requestSTTKeywords(path);
                     if (keywordService.findKeywords(documentId) == null) {
@@ -122,8 +125,8 @@ public class SseService {
                     } else {
                         keywordService.renewKeywords(responseEntity, documentId);
                     }
+                    emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("keywords").data("keywords"));
                     sendToClient(documentId, responseEntity.getBody().getKeywords());
-                    emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("keywords"));
                 }
             } catch (IOException exception) {
                 emitterRepository.deleteById(documentId);
@@ -150,18 +153,25 @@ public class SseService {
         }
     }
 
-    private void sendAnswer(Long documentId, String keywordLabel) {
+    private void sendAnswer(Long documentId, String keyword) {
+        AnswerDto answerDto = questionService.getAnswer(documentId, keyword);
+        if (answerDto == null) {
+            answerDto.setText("processing");
+            ResponseEntity<AnswerDto> temp = new ResponseEntity<>(answerDto, HttpStatus.OK);
+            questionService.createAnswer(documentId, keyword, temp);
+        }
+
         SseEmitter emitter = emitterRepository.get(documentId);
         if (emitter != null) {
             try {
-                ResponseEntity<AnswerDto> responseEntity = requestService.requestAnswer(documentId, keywordLabel);
-                emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("answer"));
+                ResponseEntity<AnswerDto> responseEntity = requestService.requestAnswer(documentId, keyword);
+                questionService.createAnswer(documentId, keyword, responseEntity);
+                emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("answer").data(keyword));
             } catch (IOException exception) {
                 emitterRepository.deleteById(documentId);
                 emitter.completeWithError(exception);
             }
         }
-
     }
 
     private void sendSTT(Long documentId, String path, Long userId) {
@@ -175,14 +185,14 @@ public class SseService {
                 lectureNoteService.createLectureNote(documentId, data, sttResult);
                 SttDataDto sttDataDto = new SttDataDto(data);
 
-                String sttFileName = String.valueOf(userId) + "_" + String.valueOf(documentId) + ".pdf";
-                File textPdfFile = convertStringToPdf(sttResult, sttFileName);
+                String sttFileName = String.valueOf(userId) + "_" + String.valueOf(documentId) + ".txt";
+                File textFile = convertStringToPdf(sttResult, sttFileName);
 
                 String contentType = "application/pdf";
-                String originalFilename = textPdfFile.getName();
-                String name = textPdfFile.getName();
+                String originalFilename = textFile.getName();
+                String name = textFile.getName();
 
-                FileInputStream fileInputStream = new FileInputStream(textPdfFile);
+                FileInputStream fileInputStream = new FileInputStream(textFile);
                 MultipartFile multipartFile = new MockMultipartFile(name, originalFilename, contentType, fileInputStream);
                 S3Dto s3DtoForSTT = new S3Dto(multipartFile, documentId, userId, "pdf");
                 String textPdfPath = awsS3Uploader.uploadTextPdfFile(s3DtoForSTT);
@@ -209,7 +219,7 @@ public class SseService {
                 lectureNoteService.updateLectureNote(documentId, data, sttResult);
                 SttDataDto sttDataDto = new SttDataDto(data);
 
-                String sttFileName = String.valueOf(userId) + "_" + String.valueOf(documentId) + ".pdf";
+                String sttFileName = String.valueOf(userId) + "_" + String.valueOf(documentId) + ".txt";
                 File textPdfFile = convertStringToPdf(sttResult, sttFileName);
 
                 String contentType = "application/pdf";
