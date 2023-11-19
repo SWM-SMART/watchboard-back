@@ -6,6 +6,7 @@ import com.smart.watchboard.repository.DocumentRepository;
 import com.smart.watchboard.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -65,6 +66,14 @@ public class WhiteboardService {
             documentRepository.save(updatedDocument);
         }
 
+    }
+
+    public boolean checkAuthorization(Long documentId, Long userId) {
+        Document document = findDoc(documentId);
+        if (userId != document.getUser().getId()) {
+            return false;
+        }
+        return true;
     }
 
 //    public void createWhiteboardData(Map<String, WhiteboardData> documentData, long documentId, String accessToken) {
@@ -159,7 +168,6 @@ public class WhiteboardService {
 
     public boolean isPdfType(Long documentId) {
         Document document = findDoc(documentId);
-        System.out.println(document.getDataType());
         if (document.getDataType().equals("pdf")) {
             return true;
         }
