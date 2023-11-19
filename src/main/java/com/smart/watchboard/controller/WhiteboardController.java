@@ -2,6 +2,7 @@ package com.smart.watchboard.controller;
 
 import com.smart.watchboard.domain.WhiteboardData;
 import com.smart.watchboard.dto.*;
+import com.smart.watchboard.service.JwtService;
 import com.smart.watchboard.service.WhiteboardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,6 +20,7 @@ import java.util.List;
 public class WhiteboardController {
 
     private final WhiteboardService whiteboardService;
+    private final JwtService jwtService;
 
     @GetMapping()
     @Operation(summary = "문서 목록 조회", description = "사용자가 속해 있는 모든 문서 목록을 조회한다.")
@@ -31,6 +33,11 @@ public class WhiteboardController {
     @GetMapping("/{documentID}")
     @Operation(summary = "문서 데이터 조회", description = "특정 문서의 데이터를 조회한다.")
     public ResponseEntity<DocumentResponseDto> getDocument(@PathVariable(value = "documentID") long documentId, @RequestHeader("Authorization") String accessToken) {
+        String extractedAccessToken = jwtService.extractAccessToken(accessToken);
+        Long userId = jwtService.extractUserId(extractedAccessToken).orElse(null);
+        if (!whiteboardService.checkAuthorization(documentId, userId)) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
         DocumentResponseDto response = whiteboardService.findDocument(documentId, accessToken);
 
         return new ResponseEntity<>(response, HttpStatus.OK);

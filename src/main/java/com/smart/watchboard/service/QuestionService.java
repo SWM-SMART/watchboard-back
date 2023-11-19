@@ -17,18 +17,21 @@ public class QuestionService {
     private final AnswerRepository answerRepository;
 
     public void createAnswer(Long documentId, String keyword, ResponseEntity<AnswerDto> responseEntity) {
-        AnswerDto answerDto = getAnswer(documentId, keyword);
-        if (answerDto.getText().equals("processing")) {
-            Answer answer = getAnswerForCreate(documentId, keyword);
-            answer.setText(responseEntity.getBody().getText());
-            answerRepository.save(answer);
-        } else if(answerDto == null) {
+        String text = responseEntity.getBody().getText();
+        if (text.equals("init")) {
             Answer answer = Answer.builder()
                     .documentId(documentId)
                     .keyword(keyword)
-                    .text(responseEntity.getBody().getText())
+                    .text("processing")
                     .build();
             answerRepository.save(answer);
+        } else {
+            AnswerDto answerDto = getAnswer(documentId, keyword);
+            if (answerDto.getText().equals("processing")) {
+                Answer answer = getAnswerForCreate(documentId, keyword);
+                answer.setText(responseEntity.getBody().getText());
+                answerRepository.save(answer);
+            }
         }
     }
 

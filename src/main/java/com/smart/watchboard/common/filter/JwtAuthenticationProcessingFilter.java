@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
@@ -18,6 +19,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -67,7 +69,7 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
      * reIssueRefreshToken()로 리프레시 토큰 재발급 & DB에 리프레시 토큰 업데이트 메소드 호출
      * 그 후 JwtService.sendAccessTokenAndRefreshToken()으로 응답 헤더에 보내기
      */
-    public void checkRefreshTokenAndReIssueAccessToken(HttpServletResponse response, String refreshToken) {
+    public void checkRefreshTokenAndReIssueAccessToken(HttpServletResponse response, String refreshToken) throws UnsupportedEncodingException {
         if (jwtService.isTokenValid(refreshToken)) {
             String reIssuedRefreshToken = reIssueRefreshToken(jwtService.extractUserId(refreshToken).get());
             jwtService.sendAccessAndRefreshToken(response, jwtService.createAccessToken(jwtService.extractUserId(refreshToken).get()),
@@ -77,8 +79,12 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
         userRepository.findById(userId)
                 .ifPresent(user -> {
                     String reIssuedRefreshToken = reIssueRefreshToken(user.getId());
-                    jwtService.sendAccessAndRefreshToken(response, jwtService.createAccessToken(user.getId()),
-                            reIssuedRefreshToken);
+                    try {
+                        jwtService.sendAccessAndRefreshToken(response, jwtService.createAccessToken(user.getId()),
+                                reIssuedRefreshToken);
+                    } catch (UnsupportedEncodingException e) {
+                        throw new RuntimeException(e);
+                    }
                 });
     }
 
@@ -104,8 +110,10 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
                                                   FilterChain filterChain) throws ServletException, IOException {
         log.info("checkAccessTokenAndAuthentication() 호출");
         jwtService.extractAccessToken(request)
-                .filter(jwtService::isTokenValid);
-
+                .filter(jwtService::isTokenValid)
+                .ifPresent(accessToken -> jwtService.extractUserId(accessToken)
+                        .ifPresent(userId -> userRepository.findById(userId)
+                                .ifPresent(this::saveAuthentication)));
         filterChain.doFilter(request, response);
     }
 
@@ -126,7 +134,6 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
      */
     public void saveAuthentication(User myUser) {
         String password = "asd";
-
         UserDetails userDetailsUser = org.springframework.security.core.userdetails.User.builder()
                 .username(myUser.getEmail())
                 .password(password)
@@ -136,9 +143,7 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
         Authentication authentication =
                 new UsernamePasswordAuthenticationToken(userDetailsUser, null,
                         authoritiesMapper.mapAuthorities(userDetailsUser.getAuthorities()));
-
+        log.info("saveAuthentication");
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
-
-
 }

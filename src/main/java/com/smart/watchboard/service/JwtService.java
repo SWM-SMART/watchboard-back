@@ -3,6 +3,10 @@ package com.smart.watchboard.service;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.smart.watchboard.domain.User;
+import com.smart.watchboard.dto.UserInformationDto;
+import com.smart.watchboard.repository.UserRepository;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
@@ -45,6 +49,8 @@ public class JwtService {
     private static final String ISSUER_CLAIM_VALUE = "wb";
     private static final String BEARER = "Bearer ";
 
+    private final UserRepository userRepository;
+
     /**
      * AccessToken 생성 메소드
      */
@@ -85,7 +91,7 @@ public class JwtService {
     /**
      * AccessToken + RefreshToken 헤더에 실어서 보내기
      */
-    public void sendAccessAndRefreshToken(HttpServletResponse response, String accessToken, String refreshToken) {
+    public void sendAccessAndRefreshToken(HttpServletResponse response, String accessToken, String refreshToken) throws UnsupportedEncodingException {
         response.setStatus(HttpServletResponse.SC_OK);
 
         setAccessTokenHeader(response, accessToken);
@@ -100,7 +106,18 @@ public class JwtService {
      * 헤더를 가져온 후 "Bearer"를 삭제(""로 replace)
      */
     public Optional<String> extractRefreshToken(HttpServletRequest request) {
-        return Optional.ofNullable(request.getHeader(refreshHeader))
+        Cookie[] cookies = request.getCookies();
+        String bearerRefreshToken = "";
+        if (cookies != null) {
+            for (int i = 0; i < cookies.length && cookies[i] != null; i++) {
+                if (cookies[i].getName().equals("refreshToken")) {
+                    bearerRefreshToken = cookies[i].getValue();
+                    break;
+                }
+            }
+        }
+
+        return Optional.ofNullable(bearerRefreshToken)
                 .filter(refreshToken -> refreshToken.startsWith(BEARER))
                 .map(refreshToken -> refreshToken.replace(BEARER, ""));
     }
@@ -119,6 +136,7 @@ public class JwtService {
     public String extractAccessToken(String accessToken) {
         try {
             isAccessTokenFormatValid(accessToken);
+            return accessToken.substring(7);
         } catch (IllegalArgumentException e) {
             log.info("Error: " + e);
         }
@@ -157,14 +175,17 @@ public class JwtService {
      * AccessToken 헤더 설정
      */
     public void setAccessTokenHeader(HttpServletResponse response, String accessToken) {
-        response.setHeader(accessHeader, accessToken);
+        String bearerAccessToken = "Bearer " + accessToken;
+        response.setHeader(accessHeader, bearerAccessToken);
     }
 
     /**
      * RefreshToken 헤더 설정
      */
-    public void setRefreshTokenHeader(HttpServletResponse response, String refreshToken) {
-        response.setHeader(refreshHeader, refreshToken);
+    public void setRefreshTokenHeader(HttpServletResponse response, String refreshToken) throws UnsupportedEncodingException {
+        ResponseCookie cookie = setCookieRefreshToken(refreshToken);
+        response.setHeader("Set-Cookie", cookie.toString());
+        //response.setHeader(refreshHeader, refreshToken);
     }
 
 
@@ -236,5 +257,14 @@ public class JwtService {
         }
 
         return headers;
+    }
+
+    public UserInformationDto getUserInformation(String accessToken) {
+        String extractedToken = extractDecodedToken(accessToken);
+        Long userId = extractUserId(extractedToken).orElse(null);
+        Optional<User> user = userRepository.findById(userId);
+        UserInformationDto userInformationDto = new UserInformationDto(userId, user.get().getNickname(), user.get().getEmail());
+
+        return userInformationDto;
     }
 }

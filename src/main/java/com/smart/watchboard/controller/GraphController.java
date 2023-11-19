@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -39,6 +40,7 @@ public class GraphController {
     private final KeywordService keywordService;
     private final JwtService jwtService;
     private final QuestionService questionService;
+    private final SummaryService summaryService;
     @PostMapping("/graph/{documentID}")
     @Operation(summary = "마인드맵 생성", description = "ai 서버에 마인드맵 요청한다.")
     public void createMindmap(@PathVariable(value = "documentID") long documentId, @RequestBody KeywordsBodyDto keywordsBodyDto, @RequestHeader("Authorization") String accessToken) throws JsonProcessingException {
@@ -70,8 +72,8 @@ public class GraphController {
         if (document.getDataType().equals("pdf")) {
             String pdfUrl = fileService.getPath(documentId);
             if (mindmapDto == null) {
-                sseService.notifyKeywords(documentId, pdfUrl);
                 sseService.notifySummary(documentId, pdfUrl);
+                sseService.notifyKeywords(documentId, pdfUrl);
                 return new ResponseEntity<>(HttpStatus.ACCEPTED);
             }
         } else {
@@ -98,8 +100,14 @@ public class GraphController {
     @Operation(summary = "키워드 질문", description = "키워드 AI에 질문")
     public ResponseEntity<AnswerDto> getAnswer(@PathVariable(value = "documentID") long documentId, @PathVariable String keywordLabel, @RequestHeader("Authorization") String accessToken) throws JsonProcessingException {
         AnswerDto answerDto = questionService.getAnswer(documentId, keywordLabel);
+        if (!summaryService.checkSummary(documentId)) {
+            return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
+        }
         if (answerDto == null) {
             sseService.notifyAnswer(documentId, keywordLabel);
+            return new ResponseEntity<>(HttpStatus.ACCEPTED);
+        }
+        if (answerDto.getText().equals("processing")) {
             return new ResponseEntity<>(HttpStatus.ACCEPTED);
         }
 

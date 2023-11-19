@@ -1,5 +1,6 @@
 package com.smart.watchboard.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.itextpdf.text.DocumentException;
 import com.smart.watchboard.common.support.AwsS3Uploader;
 import com.smart.watchboard.domain.Document;
@@ -69,10 +70,16 @@ public class SseService {
                 if (whiteboardService.isPdfType(documentId)) {
                     String path = fileService.getPath(documentId);
                     ResponseEntity<MindmapResponseDto> body = requestService.requestPdfMindmap(path, documentId, keywords);
+                    KeywordsBodyDto keywordsDto = new KeywordsBodyDto(body.getBody().getKeywords());
+                    ResponseEntity<KeywordsBodyDto> keywordsDtoResponseEntity = new ResponseEntity<>(keywordsDto, HttpStatus.OK);
+                    keywordService.renewKeywords(keywordsDtoResponseEntity, documentId);
                     emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("mindmap").data("mindmap"));
                 } else if (whiteboardService.isAudioType(documentId)) {
                     Note note = noteService.findByDocument(documentId);
                     ResponseEntity<MindmapResponseDto> body = requestService.requestSTTMindmap(note.getPath(), documentId, keywords);
+                    KeywordsBodyDto keywordsDto = new KeywordsBodyDto(body.getBody().getKeywords());
+                    ResponseEntity<KeywordsBodyDto> keywordsDtoResponseEntity = new ResponseEntity<>(keywordsDto, HttpStatus.OK);
+                    keywordService.renewKeywords(keywordsDtoResponseEntity, documentId);
                     emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("mindmap").data("mindmap"));
                 }
             } catch (IOException exception) {
@@ -90,7 +97,7 @@ public class SseService {
         sendSummary(documentId, path);
     }
 
-    public void notifyAnswer(Long documentId, String keywordLabel) {
+    public void notifyAnswer(Long documentId, String keywordLabel) throws JsonProcessingException {
         sendAnswer(documentId, keywordLabel);
     }
 
@@ -153,19 +160,19 @@ public class SseService {
         }
     }
 
-    private void sendAnswer(Long documentId, String keyword) {
+    private void sendAnswer(Long documentId, String keyword) throws JsonProcessingException {
         AnswerDto answerDto = questionService.getAnswer(documentId, keyword);
         if (answerDto == null) {
-            answerDto = new AnswerDto("processing");
+            answerDto = new AnswerDto("init");
             ResponseEntity<AnswerDto> temp = new ResponseEntity<>(answerDto, HttpStatus.OK);
             questionService.createAnswer(documentId, keyword, temp);
         }
+        ResponseEntity<AnswerDto> responseEntity = requestService.requestAnswer(documentId, keyword);
+        questionService.createAnswer(documentId, keyword, responseEntity);
 
         SseEmitter emitter = emitterRepository.get(documentId);
         if (emitter != null) {
             try {
-                ResponseEntity<AnswerDto> responseEntity = requestService.requestAnswer(documentId, keyword);
-                questionService.createAnswer(documentId, keyword, responseEntity);
                 emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("answer").data(keyword));
             } catch (IOException exception) {
                 emitterRepository.deleteById(documentId);
