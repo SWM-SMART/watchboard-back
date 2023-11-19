@@ -52,5 +52,12 @@ public class SummaryService {
 
         return summary;
     }
+    public boolean checkSummary(Long documentId) {
+        Summary summary = findSummary(documentId);
+        if (summary == null) {
+            return false;
+        }
+        return true;
+    }
 
 }
