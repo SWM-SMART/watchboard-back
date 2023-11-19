@@ -24,7 +24,7 @@ public class UserController {
     @GetMapping("/info")
     @Operation(summary = "사용자 정보 조회", description = "요청받은 사용자의 정보를 조회한다.")
     public ResponseEntity<?> getUserInformation(@RequestHeader("Authorization") String accessToken) {
-        UserInformationDto userInformationDto = new UserInformationDto(1L, "권민석", "noparamin@naver.com");
+        UserInformationDto userInformationDto = jwtService.getUserInformation(accessToken);
 
         return new ResponseEntity<>(userInformationDto, HttpStatus.OK);
     }
