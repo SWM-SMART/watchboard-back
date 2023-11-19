@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -21,6 +22,8 @@ import java.io.IOException;
 @Slf4j
 @RequiredArgsConstructor
 public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccessHandler {
+    @Value("${front-url}")
+    private String frontUrl;
 
     private final JwtService jwtService;
     private final UserRepository userRepository;
@@ -30,12 +33,12 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         log.info("OAuth2 Login 성공!");
         try {
             CustomOAuth2User oAuth2User = (CustomOAuth2User) authentication.getPrincipal();
-
             if (oAuth2User.getRole() == Role.USER) {
                 String refreshToken = jwtService.createRefreshToken(oAuth2User.getUserId());
                 ResponseCookie cookie = jwtService.setCookieRefreshToken(refreshToken);
                 response.setHeader("Set-Cookie", cookie.toString());
-                response.sendRedirect("https://4988-221-148-248-129.ngrok-free.app"); // 추후 수정
+                response.sendRedirect(frontUrl); // 추후 수정
+//                response.sendRedirect("http//localhost:8081");
                 User findUser = userRepository.findByEmail(oAuth2User.getEmail())
                         .orElseThrow(() -> new IllegalArgumentException("이메일에 해당하는 유저가 없습니다."));
                 findUser.authorizeUser();
