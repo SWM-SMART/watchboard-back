@@ -1,0 +1,121 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+# This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
+
+name: Java CI with Gradle
+
+on:
+  push:
+    branches: [ "main", "dev" ]
+  pull_request:
+    branches: [ "main", "dev" ]
+
+jobs:
+  build_main:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: checkout repository
+      uses: actions/checkout@v3
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'corretto'
+
+    - name: make application-prod.yml
+      run: |
+        cd ./src/main/resources
+        touch ./application-prod.yml
+        echo "${{ secrets.APPLICATION_PROD }}" > ./application.yml
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Build with Gradle
+      run: ./gradlew build
+
+    - name: Build Docker image
+      run: docker build --platform linux/amd64 -t noparamin/watchboard .
+
+    - name: Log in Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Publish to Docker Hub
+      run: docker push noparamin/watchboard:latest
+
+    - name: Deploy with AWS SSM Send-Command
+      uses: peterkimzz/aws-ssm-send-command@v1.1.1
+      id: ssm
+      with:
+        aws-region: ${{ secrets.AWS_REGION }}
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        instance-ids: ${{ secrets.INSTANCE_ID }}
+        working-directory: /usr/bin
+        command: |
+          docker pull noparamin/watchboard
+          docker stop $(docker ps -a -q)
+          docker run -d -p 8080:8080 noparamin/watchboard
+          docker rm $(docker ps --filter 'status=exited' -a -q)
+          docker image prune -a -f
+
+  build_dev:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev'
+
+    steps:
+    - name: checkout repository
+      uses: actions/checkout@v3
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'corretto'
+
+    - name: make application-dev.yml
+      run: |
+        cd ./src/main/resources
+        touch ./application-dev.yml
+        echo "${{ secrets.APPLICATION_DEV }}" > ./application.yml
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Build with Gradle
+      run: ./gradlew build
+
+    - name: Build Docker image
+      run: docker build --platform linux/amd64 -t noparamin/watchboard:test .
+
+    - name: Log in Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Publish to Docker Hub
+      run: docker push noparamin/watchboard:test
+
+    - name: Deploy with AWS SSM Send-Command
+      uses: peterkimzz/aws-ssm-send-command@v1.1.1
+      id: ssm
+      with:
+        aws-region: ${{ secrets.AWS_REGION }}
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        instance-ids: ${{ secrets.INSTANCE_ID }}
+        working-directory: /usr/bin
+        command: |
+          docker pull noparamin/watchboard:test
+          docker stop $(docker ps -a -q)
+          docker run -d -p 8081:8081 noparamin/watchboard:test
+          docker rm $(docker ps --filter 'status=exited' -a -q)
+          docker image prune -a -f
