@@ -47,7 +47,8 @@ public class AudioFileController {
 
     @PostMapping("/{documentID}/audio")
     public ResponseEntity<?> uploadAudioFile(@PathVariable(value = "documentID") long documentId, @RequestParam("audio") MultipartFile audioFile, @RequestHeader("Authorization") String accessToken) throws UnsupportedAudioFileException, IOException, DocumentException {
-        Optional<Long> id = jwtService.extractUserId(accessToken);
+        String extractedAccessToken = jwtService.extractAccessToken(accessToken);
+        Optional<Long> id = jwtService.extractUserId(extractedAccessToken);
         Long userId = id.orElse(null);
 
         // s3에 오디오 파일 저장
