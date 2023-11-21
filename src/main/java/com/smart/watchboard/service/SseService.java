@@ -51,6 +51,24 @@ public class SseService {
         sendToClient(documentId, keywords);
     }
 
+    public void notifyCycle() {
+        sendCycle();
+    }
+
+    private void sendCycle() {
+        List<Long> keys = emitterRepository.getAllKeys();
+        for (Long documentId : keys) {
+            SseEmitter emitter = emitterRepository.get(documentId);
+            try {
+                emitter.send(SseEmitter.event().id(String.valueOf(documentId)).name("ping").data("ping"));
+            } catch (IOException exception) {
+                emitterRepository.deleteById(documentId);
+                emitter.completeWithError(exception);
+            }
+
+        }
+    }
+
     private void sendToClientFirst(Long documentId, Object data) {
         SseEmitter emitter = emitterRepository.get(documentId);
         if (emitter != null) {
