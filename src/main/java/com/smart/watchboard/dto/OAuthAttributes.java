@@ -51,6 +51,15 @@ public class OAuthAttributes {
      * OAuth2UserInfo에서 가져와서 build
      */
     public User toEntity(SocialType socialType, OAuth2UserInfo oauth2UserInfo) {
+        if (oauth2UserInfo.getEmail() == null) {
+            return User.builder()
+                    .socialType(socialType)
+                    .socialId(oauth2UserInfo.getId())
+                    .email("aaa")
+                    .nickname(oauth2UserInfo.getNickname())
+                    .role(Role.USER)
+                    .build();
+        }
 
         return User.builder()
                 .socialType(socialType)
