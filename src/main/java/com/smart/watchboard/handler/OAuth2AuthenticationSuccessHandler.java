@@ -38,9 +38,8 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
                 ResponseCookie cookie = jwtService.setCookieRefreshToken(refreshToken);
                 response.setHeader("Set-Cookie", cookie.toString());
                 response.sendRedirect(frontUrl); // 추후 수정
-//                response.sendRedirect("http//localhost:8081");
-                User findUser = userRepository.findByEmail(oAuth2User.getEmail())
-                        .orElseThrow(() -> new IllegalArgumentException("이메일에 해당하는 유저가 없습니다."));
+                User findUser = userRepository.findById(oAuth2User.getUserId())
+                        .orElseThrow(() -> new IllegalArgumentException("아이디에 해당하는 유저가 없습니다."));
                 findUser.authorizeUser();
             } else {
                 loginSuccess(response, oAuth2User);
